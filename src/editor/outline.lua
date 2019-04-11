@@ -1,4 +1,4 @@
--- Copyright 2014-15 Paul Kulchenko, ZeroBrane LLC
+-- Copyright 2014-17 Paul Kulchenko, ZeroBrane LLC
 
 local ide = ide
 ide.outline = {
@@ -37,7 +37,7 @@ local function resetOutlineTimer()
 end
 
 local function resetIndexTimer(interval)
-  if ide.config.symbolindexinactivity and not ide.timers.symbolindex:IsRunning() then
+  if ide.timers.symbolindex and ide.config.symbolindexinactivity and not ide.timers.symbolindex:IsRunning() then
     ide.timers.symbolindex:Start(interval or ide.config.symbolindexinactivity*1000, wx.wxTIMER_ONE_SHOT)
   end
 end
@@ -47,7 +47,7 @@ local function outlineRefresh(editor, force)
   local tokens = editor:GetTokenList()
   local sep = editor.spec.sep
   local varname = "([%w_][%w_"..q(sep:sub(1,1)).."]*)"
-  local funcs = {updated = TimeGet()}
+  local funcs = {updated = ide:GetTime()}
   local var = {}
   local outcfg = ide.config.outline or {}
   local scopes = {}
@@ -83,10 +83,10 @@ local function outlineRefresh(editor, force)
       local depth = token.context['function'] or 1
       local name, pos = token.name, token.fpos
       text = text or editor:GetTextDyn()
-      local _, _, rname, params = text:find('([^%(]*)(%b())', pos)
-      if name and rname:find(token.name, 1, true) ~= 1 then
-        name = rname:gsub("%s+$","")
-      end
+      local _, _, rname, params = text:find('([^(]*)(%b())', pos)
+      if rname then rname = rname:gsub("%s+$","") end
+      -- if something else got captured, then don't show any parameters
+      if name and rname and name ~= rname then params = "" end
       if not name then
         local s = editor:PositionFromLine(editor:LineFromPosition(pos-1))
         local rest
@@ -108,7 +108,7 @@ local function outlineRefresh(editor, force)
       end
       name = name or outcfg.showanonymous
       funcs[#funcs+1] = {
-        name = ((name or '~')..params):gsub("%s+", " "),
+        name = ((name or '~')..(params or "")):gsub("%s+", " "),
         skip = (not name) and true or nil,
         depth = depth,
         image = ftype,
@@ -120,13 +120,15 @@ local function outlineRefresh(editor, force)
   if force == nil then return funcs end
 
   local ctrl = outline.outlineCtrl
+  if not ctrl then return end -- outline can be completely removed/disabled
+
   local cache = caches[editor] or {}
   caches[editor] = cache
 
   -- add file
   local filename = ide:GetDocument(editor):GetTabText()
   local fileitem = cache.fileitem
-  if not fileitem then
+  if not fileitem or not fileitem:IsOk() then
     local root = ctrl:GetRootItem()
     if not root or not root:IsOk() then return end
 
@@ -227,7 +229,7 @@ local function indexFromQueue()
 
   local editor = ide:GetEditor()
   local inactivity = ide.config.symbolindexinactivity
-  if editor and inactivity and editor.updated > TimeGet()-inactivity then
+  if editor and inactivity and editor:GetModifiedTime() > ide:GetTime()-inactivity then
     -- reschedule timer for later time
     resetIndexTimer()
   else
@@ -242,12 +244,12 @@ local function indexFromQueue()
       editor:SetTextDyn(content)
       editor:Colourise(0, -1)
       editor:ResetTokenList()
-      while IndicateAll(editor) do end
+      while editor:IndicateSymbols() do end
 
       outline:UpdateSymbols(fname, outlineRefresh(editor))
       editor:Destroy()
     else
-      DisplayOutputLn(TR("Can't open file '%s': %s"):format(fname, err))
+      ide:Print(TR("Can't open file '%s': %s"):format(fname, err))
     end
     if #outline.indexqueue == 0 then
       outline:SaveSettings()
@@ -259,20 +261,19 @@ local function indexFromQueue()
 end
 
 local function createOutlineWindow()
-  local REFRESH, REINDEX = 1, 2
   local width, height = 360, 200
-  local ctrl = wx.wxTreeCtrl(ide.frame, wx.wxID_ANY,
+  local ctrl = ide:CreateTreeCtrl(ide.frame, wx.wxID_ANY,
     wx.wxDefaultPosition, wx.wxSize(width, height),
     wx.wxTR_LINES_AT_ROOT + wx.wxTR_HAS_BUTTONS
     + wx.wxTR_HIDE_ROOT + wx.wxNO_BORDER)
 
   outline.outlineCtrl = ctrl
-  ide.timers.outline = ide:AddTimer(ctrl, function() outlineRefresh(GetEditor(), false) end)
+  ide.timers.outline = ide:AddTimer(ctrl, function() outlineRefresh(ide:GetEditor(), false) end)
   ide.timers.symbolindex = ide:AddTimer(ctrl, function() ide:DoWhenIdle(indexFromQueue) end)
 
   ctrl:AddRoot("Outline")
   ctrl:SetImageList(outline.imglist)
-  ctrl:SetFont(ide.font.fNormal)
+  ctrl:SetFont(ide.font.tree)
 
   function ctrl:ActivateItem(item_id)
     local data = ctrl:GetItemData(item_id)
@@ -292,7 +293,7 @@ local function createOutlineWindow()
         if not parent:IsOk() then return end
       end
       -- activate editor tab
-      local editor = onefile and GetEditor() or ctrl:GetItemData(parent):GetData()
+      local editor = onefile and ide:GetEditor() or ctrl:GetItemData(parent):GetData()
       local cache = caches[editor]
       if editor and cache then
         -- move to position in the file
@@ -317,16 +318,21 @@ local function createOutlineWindow()
     return true
   end
 
-  ctrl:Connect(wx.wxEVT_LEFT_DOWN, activateByPosition)
+  if (ide.config.outline or {}).activateonclick then
+    ctrl:Connect(wx.wxEVT_LEFT_DOWN, activateByPosition)
+  end
   ctrl:Connect(wx.wxEVT_LEFT_DCLICK, activateByPosition)
   ctrl:Connect(wx.wxEVT_COMMAND_TREE_ITEM_ACTIVATED, function(event)
       ctrl:ActivateItem(event:GetItem())
     end)
 
-  ctrl:Connect(ID_OUTLINESORT, wx.wxEVT_COMMAND_MENU_SELECTED,
+  ctrl:Connect(ID.OUTLINESORT, wx.wxEVT_COMMAND_MENU_SELECTED,
     function()
       ide.config.outline.sort = not ide.config.outline.sort
-      for editor, cache in pairs(caches) do
+      local ed = ide:GetEditor()
+      if not ed then return end
+      -- when showing one file only refresh outline for the current editor
+      for editor, cache in pairs((ide.config.outline or {}).showonefile and {[ed] = caches[ed]} or caches) do
         ide:SetStatus(("Refreshing '%s'..."):format(ide:GetDocument(editor):GetFileName()))
         local isexpanded = ctrl:IsExpanded(cache.fileitem)
         outlineRefresh(editor, true)
@@ -338,9 +344,9 @@ local function createOutlineWindow()
   ctrl:Connect(wx.wxEVT_COMMAND_TREE_ITEM_MENU,
     function (event)
       local menu = ide:MakeMenu {
-        { ID_OUTLINESORT, TR("Sort By Name"), "", wx.wxITEM_CHECK },
+        { ID.OUTLINESORT, TR("Sort By Name"), "", wx.wxITEM_CHECK },
       }
-      menu:Check(ID_OUTLINESORT, ide.config.outline.sort)
+      menu:Check(ID.OUTLINESORT, ide.config.outline.sort)
 
       PackageEventHandle("onMenuOutline", menu, ctrl, event)
 
@@ -363,7 +369,10 @@ end
 
 local function eachNode(eachFunc, root, recursive)
   local ctrl = outline.outlineCtrl
-  local item = ctrl:GetFirstChild(root or ctrl:GetRootItem())
+  if not ctrl then return end
+  root = root or ctrl:GetRootItem()
+  if not (root and root:IsOk()) then return end
+  local item = ctrl:GetFirstChild(root)
   while true do
     if not item:IsOk() then break end
     if eachFunc and eachFunc(ctrl, item) then break end
@@ -371,8 +380,6 @@ local function eachNode(eachFunc, root, recursive)
     item = ctrl:GetNextSibling(item)
   end
 end
-
-createOutlineWindow()
 
 local pathsep = GetPathSeparator()
 local function isInSubDir(name, path)
@@ -383,9 +390,12 @@ local function isIgnoredInIndex(name)
   local ignoredirs = outline.settings.ignoredirs
   if ignoredirs[name] then return true end
 
-  -- check through ignored dirs to see if any of them match the file
+  -- check through ignored dirs to see if any of them match the file;
+  -- skip those that are outside of the current project tree to allow
+  -- scanning of the projects that may be inside ignored directories.
+  local proj = ide:GetProject() -- `nil` when not set
   for path in pairs(ignoredirs) do
-    if isInSubDir(name, path) then return true end
+    if (not proj or isInSubDir(path, proj)) and isInSubDir(name, path) then return true end
   end
 
   return false
@@ -425,14 +435,28 @@ local function enableIndex(path)
   outline:RefreshSymbols(path)
 end
 
+local lastfocus
 local package = ide:AddPackage('core.outline', {
+    onRegister = function(self)
+      if not ide.config.outlineinactivity then return end
+
+      createOutlineWindow()
+    end,
+
     -- remove the editor from the list
     onEditorClose = function(self, editor)
       local cache = caches[editor]
       local fileitem = cache and cache.fileitem
       caches[editor] = nil -- remove from cache
-      if (ide.config.outline or {}).showonefile then return end
-      if fileitem then outline.outlineCtrl:Delete(fileitem) end
+
+      if fileitem and fileitem:IsOk() then
+        local ctrl = outline.outlineCtrl
+        if (ide.config.outline or {}).showonefile then
+          ctrl:DeleteChildren(fileitem)
+        else
+          ctrl:Delete(fileitem)
+        end
+      end
     end,
 
     -- handle rename of the file in the current editor
@@ -447,19 +471,32 @@ local package = ide:AddPackage('core.outline', {
       end
       local path = doc and doc:GetFilePath()
       if path and cache and cache.funcs then
-        outline:UpdateSymbols(path, cache.funcs.updated > editor.updated and cache.funcs or nil)
+        outline:UpdateSymbols(path, cache.funcs.updated > editor:GetModifiedTime() and cache.funcs or nil)
         outline:SaveSettings()
       end
     end,
 
     -- go over the file items to turn bold on/off or collapse/expand
     onEditorFocusSet = function(self, editor)
+      local cache = caches[editor]
+
+      -- if the editor is not in the cache, which may happen if the user
+      -- quickly switches between tabs that don't have outline generated,
+      -- regenerate it manually
+      if not cache then resetOutlineTimer() end
+      resetIndexTimer()
+
       if (ide.config.outline or {}).showonefile and ide.config.outlineinactivity then
-        outlineRefresh(editor, true)
+        -- this needs to be done when editor gets focus, but during active auto-complete
+        -- the focus shifts between the editor and the popup after each character;
+        -- the refresh is not necessary in this case, so only refresh when the editor changes
+        if not lastfocus or editor:GetId() ~= lastfocus then
+          outlineRefresh(editor, true)
+          lastfocus = editor:GetId()
+        end
         return
       end
 
-      local cache = caches[editor]
       local fileitem = cache and cache.fileitem
       local ctrl = outline.outlineCtrl
       local itemname = ide:GetDocument(editor):GetTabText()
@@ -468,12 +505,6 @@ local package = ide:AddPackage('core.outline', {
       if fileitem and ctrl:GetItemText(fileitem) ~= itemname then
         ctrl:SetItemText(fileitem, itemname)
       end
-
-      -- if the editor is not in the cache, which may happen if the user
-      -- quickly switches between tabs that don't have outline generated,
-      -- regenerate it manually
-      if not cache then resetOutlineTimer() end
-      resetIndexTimer()
 
       eachNode(function(ctrl, item)
           local found = fileitem and item:GetValue() == fileitem:GetValue()
@@ -508,10 +539,10 @@ local package = ide:AddPackage('core.outline', {
       local item_id = event:GetItem()
       local name = tree:GetItemFullName(item_id)
       local symboldirmenu = ide:MakeMenu {
-        {ID_SYMBOLDIRREFRESH, TR("Refresh Index"), TR("Refresh indexed symbols from files in the selected directory")},
-        {ID_SYMBOLDIRDISABLE, TR("Disable Indexing For '%s'"):format(name), TR("Ignore and don't index symbols from files in the selected directory")},
+        {ID.SYMBOLDIRREFRESH, TR("Refresh Index"), TR("Refresh indexed symbols from files in the selected directory")},
+        {ID.SYMBOLDIRDISABLE, TR("Disable Indexing For '%s'"):format(name), TR("Ignore and don't index symbols from files in the selected directory")},
       }
-      local _, _, projdirpos = ide:FindMenuItem(ID_PROJECTDIR, menu)
+      local _, _, projdirpos = ide:FindMenuItem(ID.PROJECTDIR, menu)
       if projdirpos then
         local ignored = isIgnoredInIndex(name)
         local enabledirmenu = ide:MakeMenu {}
@@ -524,26 +555,26 @@ local package = ide:AddPackage('core.outline', {
           tree:Connect(id, wx.wxEVT_COMMAND_MENU_SELECTED, function() enableIndex(path) end)
         end
 
-        symboldirmenu:Append(wx.wxMenuItem(symboldirmenu, ID_SYMBOLDIRENABLE,
+        symboldirmenu:Append(wx.wxMenuItem(symboldirmenu, ID.SYMBOLDIRENABLE,
           TR("Enable Indexing"), "", wx.wxITEM_NORMAL, enabledirmenu))
-        menu:Insert(projdirpos+1, wx.wxMenuItem(menu, ID_SYMBOLDIRINDEX,
+        menu:Insert(projdirpos+1, wx.wxMenuItem(menu, ID.SYMBOLDIRINDEX,
           TR("Symbol Index"), "", wx.wxITEM_NORMAL, symboldirmenu))
 
         -- disable "enable" if it's empty
-        menu:Enable(ID_SYMBOLDIRENABLE, #paths > 0)
+        menu:Enable(ID.SYMBOLDIRENABLE, #paths > 0)
         -- disable "refresh" and "disable" if the directory is ignored
         -- or if any of the directories above it are ignored
-        menu:Enable(ID_SYMBOLDIRREFRESH, tree:IsDirectory(item_id) and not ignored)
-        menu:Enable(ID_SYMBOLDIRDISABLE, tree:IsDirectory(item_id) and not ignored)
+        menu:Enable(ID.SYMBOLDIRREFRESH, tree:IsDirectory(item_id) and not ignored)
+        menu:Enable(ID.SYMBOLDIRDISABLE, tree:IsDirectory(item_id) and not ignored)
 
-        tree:Connect(ID_SYMBOLDIRREFRESH, wx.wxEVT_COMMAND_MENU_SELECTED, function()
+        tree:Connect(ID.SYMBOLDIRREFRESH, wx.wxEVT_COMMAND_MENU_SELECTED, function()
             -- purge files in this directory as some might have been removed;
             -- files will be purged based on time, but this is a good time to clean.
             purgeIndex(name)
             outline:RefreshSymbols(name)
             resetIndexTimer(1) -- start after 1ms
           end)
-        tree:Connect(ID_SYMBOLDIRDISABLE, wx.wxEVT_COMMAND_MENU_SELECTED, function()
+        tree:Connect(ID.SYMBOLDIRDISABLE, wx.wxEVT_COMMAND_MENU_SELECTED, function()
             disableIndex(name)
           end)
        end
@@ -585,6 +616,7 @@ local package = ide:AddPackage('core.outline', {
       -- scan all items recursively starting from the current file
       eachNode(function(ctrl, item)
           local func = cache.funcs[ctrl:GetItemData(item):GetData()]
+          if not func then return end
           local val = edpos >= func.pos and func.poe and edpos <= func.poe
           if edline == editor:LineFromPosition(func.pos)+1
           or (func.poe and edline == editor:LineFromPosition(func.poe)+1) then
@@ -634,12 +666,12 @@ end
 function outline:GetEditorSymbols(editor)
   -- force token refresh (as these may be not updated yet)
   if #editor:GetTokenList() == 0 then
-    while IndicateAll(editor) do end
+    while editor:IndicateSymbols() do end
   end
 
   -- only refresh the functions when none is present
-  if not caches[editor] or #caches[editor].funcs == 0 then outlineRefresh(editor, true) end
-  return caches[editor].funcs
+  if not caches[editor] or #(caches[editor].funcs or {}) == 0 then outlineRefresh(editor, true) end
+  return caches[editor] and caches[editor].funcs or {}
 end
 
 function outline:RefreshSymbols(path, callback)
@@ -647,7 +679,7 @@ function outline:RefreshSymbols(path, callback)
 
   local exts = {}
   for _, ext in pairs(ide:GetKnownExtensions()) do
-    local spec = GetSpec(ext)
+    local spec = ide:FindSpec(ext)
     if spec and spec.marksymbols then table.insert(exts, ext) end
   end
 
@@ -655,7 +687,7 @@ function outline:RefreshSymbols(path, callback)
     -- skip those directories that are on the "ignore" list
     ondirectory = function(name) return outline.settings.ignoredirs[name] == nil end
   }
-  local nextfile = coroutine.wrap(function() FileSysGetRecursive(path, true, table.concat(exts, ";"), opts) end)
+  local nextfile = coroutine.wrap(function() ide:GetFileList(path, true, table.concat(exts, ";"), opts) end)
   while true do
     local file = nextfile()
     if not file then break end
@@ -668,7 +700,7 @@ function outline:UpdateSymbols(fname, symb)
   symbols[fname] = symb
 
   -- purge outdated records
-  local threshold = TimeGet() - 60*60*24*7 -- cache for 7 days
+  local threshold = ide:GetTime() - 60*60*24*7 -- cache for 7 days
   if not self.indexpurged then
     for k, v in pairs(symbols) do
       if v.updated < threshold then symbols[k] = nil end

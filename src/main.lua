@@ -1,4 +1,4 @@
--- Copyright 2011-15 Paul Kulchenko, ZeroBrane LLC
+-- Copyright 2011-17 Paul Kulchenko, ZeroBrane LLC
 -- authors: Luxinia Dev (Eike Decker & Christoph Kubisch)
 ---------------------------------------------------------
 
@@ -18,19 +18,22 @@ if islinux then
   local file = io.popen("uname -m")
   if file then
     local machine=file:read("*l")
-    local archtype= { x86_64="x64", armv7l="armhf" }
-    arch = archtype[machine] or "x86"
+    local archtype= {
+      x86_64  = "x64",
+      armv7l  = "armhf",
+      aarch64 = "aarch64",
+    }
+    arch = archtype[machine] or arch
     file:close()
   end
 end
 
 package.cpath = (
-  iswindows and 'bin/?.dll;bin/clibs/?.dll;' or
-  islinux and ('bin/linux/%s/lib?.so;bin/linux/%s/clibs/?.so;'):format(arch,arch) or
-  --[[isosx]] 'bin/lib?.dylib;bin/clibs/?.dylib;')
+  iswindows and 'bin/clibs/?.dll;' or
+  islinux and ('bin/linux/%s/clibs/lib?.so;bin/linux/%s/clibs/?.so;'):format(arch,arch) or
+  --[[isosx]] 'bin/clibs/lib?.dylib;bin/clibs/?.dylib;')
     .. package.cpath
-package.path  = 'lualibs/?.lua;lualibs/?/?.lua;lualibs/?/init.lua;lualibs/?/?/?.lua;lualibs/?/?/init.lua;'
-              .. package.path
+package.path  = 'lualibs/?.lua;lualibs/?/?.lua;lualibs/?/init.lua;' .. package.path
 
 require("wx")
 require("bit")
@@ -43,158 +46,23 @@ dofile "src/util.lua"
 -- IDE
 --
 local pendingOutput = {}
+local config = dofile("src/config.lua")
+config.path = {
+  projectdir = "",
+  app = nil,
+}
 ide = {
+  GetTime = (function(ok, socket) return ok and socket.gettime or os.clock end)(pcall(require, "socket")),
   MODPREF = "* ",
-  MAXMARGIN = 4,
+  MAXMARGIN = wxstc.wxSTC_MAX_MARGIN or 4,
   ANYMARKERMASK = 2^24-1,
-  config = {
-    path = {
-      projectdir = "",
-      app = nil,
-    },
-    editor = {
-      autoactivate = false,
-      foldcompact = true,
-      checkeol = true,
-      saveallonrun = false,
-      caretline = true,
-      commentlinetoggle = false,
-      showfncall = false,
-      autotabs = false,
-      usetabs  = false,
-      tabwidth = 2,
-      usewrap = true,
-      wrapmode = wxstc.wxSTC_WRAP_WORD,
-      calltipdelay = 500,
-      smartindent = true,
-      fold = true,
-      autoreload = true,
-      indentguide = true,
-      backspaceunindent = true,
-      linenumber = true,
-    },
-    debugger = {
-      verbose = false,
-      hostname = nil,
-      port = nil,
-      runonstart = nil,
-      redirect = nil,
-      maxdatalength = 400,
-      maxdatanum = 400,
-      maxdatalevel = 3,
-      refuseonconflict = true,
-    },
-    default = {
-      name = 'untitled',
-      fullname = 'untitled.lua',
-      interpreter = 'luadeb',
-    },
-    outputshell = {
-      usewrap = true,
-    },
-    filetree = {
-      mousemove = true,
-    },
-    outline = {
-      jumptocurrentfunction = true,
-      showanonymous = '~',
-      showcurrentfunction = true,
-      showcompact = false,
-      showflat = false,
-      showmethodindicator = false,
-      showonefile = false,
-      sort = false,
-    },
-    commandbar = {
-      prefilter = 250, -- number of records after which to apply filtering
-      maxitems = 30, -- max number of items to show
-      width = 0.35, -- <1 -- size in proportion to the app frame width; >1 -- size in pixels
-      showallsymbols = true,
-    },
-    staticanalyzer = {
-      infervalue = false, -- off by default as it's a slower mode
-    },
-    search = {
-      autocomplete = true,
-      contextlinesbefore = 2,
-      contextlinesafter = 2,
-      showaseditor = false,
-      zoom = 0,
-      autohide = false,
-    },
-    print = {
-      magnification = -3,
-      wrapmode = wxstc.wxSTC_WRAP_WORD,
-      colourmode = wxstc.wxSTC_PRINT_BLACKONWHITE,
-      header = "%S\t%D\t%p/%P",
-      footer = nil,
-    },
-    toolbar = {
-      icons = {},
-      iconmap = {},
-    },
-
-    keymap = {},
-    imagemap = {
-      ['VALUE-MCALL'] = 'VALUE-SCALL',
-    },
-    messages = {},
-    language = "en",
-
-    styles = nil,
-    stylesoutshell = nil,
-
-    autocomplete = true,
-    autoanalyzer = true,
-    acandtip = {
-      startat = 2,
-      shorttip = true,
-      nodynwords = true,
-      ignorecase = false,
-      symbols = true,
-      droprest = true,
-      strategy = 2,
-      width = 60,
-      maxlength = 450,
-      warning = true,
-    },
-    arg = {}, -- command line arguments
-    api = {}, -- additional APIs to load
-
-    format = { -- various formatting strings
-      menurecentprojects = "%f | %i",
-      apptitle = "%T - %F",
-    },
-
-    activateoutput = true, -- activate output/console on Run/Debug/Compile
-    unhidewindow = false, -- to unhide a gui window
-    projectautoopen = true,
-    autorecoverinactivity = 10, -- seconds
-    outlineinactivity = 0.250, -- seconds
-    markersinactivity = 0.500, -- seconds
-    symbolindexinactivity = 2, -- seconds
-    filehistorylength = 20,
-    projecthistorylength = 20,
-    bordersize = 3,
-    savebak = false,
-    singleinstance = false,
-    singleinstanceport = 0xe493,
-    showmemoryusage = false,
-    showhiddenfiles = false,
-    hidpi = false, -- HiDPI/Retina display support
-    hotexit = false,
-    imagetint = nil,
-    markertint = true,
-    menuicon = true,
-    -- file exclusion lists
-    excludelist = {".svn/", ".git/", ".hg/", "CVS/", "*.pyc", "*.pyo", "*.exe", "*.dll", "*.obj","*.o", "*.a", "*.lib", "*.so", "*.dylib", "*.ncb", "*.sdf", "*.suo", "*.pdb", "*.idb", ".DS_Store", "*.class", "*.psd", "*.db"},
-    binarylist = {"*.jpg", "*.jpeg", "*.png", "*.gif", "*.ttf", "*.tga", "*.dds", "*.ico", "*.eot", "*.pdf", "*.swf", "*.jar", "*.zip", ".gz", ".rar"},
-  },
+  config = config,
   specs = {
     none = {
       sep = "\1",
     }
   },
+  messages = {},
   tools = {},
   iofilters = {},
   interpreters = {},
@@ -204,6 +72,7 @@ ide = {
   onidle = {},
 
   proto = {}, -- prototypes for various classes
+  filenames = {}, -- names for files to load
 
   app = nil, -- application engine
   interpreter = nil, -- current Lua interpreter
@@ -219,17 +88,11 @@ ide = {
   },
 
   -- misc
-  exitingProgram = false, -- are we currently exiting, ID_EXIT
+  exitingProgram = false, -- are we currently exiting?
   infocus = nil, -- last component with a focus
   editorApp = wx.wxGetApp(),
   editorFilename = nil,
-  openDocuments = {},-- open notebook editor documents[winId] = {
-  -- editor = wxStyledTextCtrl,
-  -- index = wxNotebook page index,
-  -- filePath = full filepath, nil if not saved,
-  -- fileName = just the filename,
-  -- modTime = wxDateTime of disk file or nil,
-  -- isModified = bool is the document modified? }
+  openDocuments = {}, -- see `Document` prototype in proto.lua for the methods
   ignoredFilesList = {},
   font = {
     eNormal = nil,
@@ -245,7 +108,6 @@ ide = {
     and (os.getenv('HOMEDRIVE')..os.getenv('HOMEPATH'))),
   wxver = string.match(wx.wxVERSION_STRING, "[%d%.]+"),
 
-  startedat = TimeGet(),
   test = {}, -- local functions used for testing
 
   Print = function(self, ...)
@@ -259,6 +121,10 @@ ide = {
     pendingOutput[#pendingOutput + 1] = {...}
   end,
 }
+ide.startedat = ide:GetTime()
+
+-- Scintilla switched to using full byte for style numbers from using only first 5 bits
+ide.STYLEMASK = ide.wxver <= "2.9.5" and 31 or 255
 
 -- add wx.wxMOD_RAW_CONTROL as it's missing in wxlua 2.8.12.3;
 -- provide default for wx.wxMOD_CONTROL as it's missing in wxlua 2.8 that
@@ -276,6 +142,29 @@ if not wx.wxMOD_SHIFT then wx.wxMOD_SHIFT = 0x04 end
 if not wx.wxDIR_NO_FOLLOW then wx.wxDIR_NO_FOLLOW = 0x10 end
 if not wxaui.wxAUI_TB_PLAIN_BACKGROUND then wxaui.wxAUI_TB_PLAIN_BACKGROUND = 2^8 end
 if not wx.wxNOT_FOUND then wx.wxNOT_FOUND = -1 end
+if not wx.wxEXEC_NOEVENTS then wx.wxEXEC_NOEVENTS = 16 end
+if not wx.wxEXEC_HIDE_CONSOLE then wx.wxEXEC_HIDE_CONSOLE = 32 end
+if not wx.wxEXEC_BLOCK then wx.wxEXEC_BLOCK = wx.wxEXEC_SYNC + wx.wxEXEC_NOEVENTS end
+
+for k,v in pairs({
+    VS_NONE = 0, VS_RECTANGULARSELECTION = 1, VS_USERACCESSIBLE = 2, VS_NOWRAPLINESTART = 4
+  }) do
+  if not wxstc["wxSTC_"..k] then wxstc["wxSTC_"..k] = wxstc["wxSTC_SC"..k] or v end
+end
+
+-- wxwidgets 3.1.1+ replaced wxSTC_SCMOD_* with wxSTC_KEYMOD_*; map both for compatibility
+for _, key in ipairs({"ALT", "CTRL", "SHIFT", "META", "SUPER", "NORM"}) do
+  local scmod = "wxSTC_SCMOD_"..key
+  local keymod = "wxSTC_KEYMOD_"..key
+  if wxstc[scmod] and not wxstc[keymod] then
+    wxstc[keymod] = wxstc[scmod]
+  elseif not wxstc[scmod] and wxstc[keymod] then
+    wxstc[scmod] = wxstc[keymod]
+  end
+end
+
+-- it's an interface constant and is not public in wxlua, so add it
+if not wxstc.wxSTC_SETLEXERLANGUAGE then wxstc.wxSTC_SETLEXERLANGUAGE = 4006 end
 
 if not setfenv then -- Lua 5.2
   -- based on http://lua-users.org/lists/lua-l/2010-06/msg00314.html
@@ -293,6 +182,82 @@ if not setfenv then -- Lua 5.2
     local level = findenv(f)
     if level then debug.setupvalue(f, level, t) end
     return f end
+end
+
+if not package.searchpath then
+  -- from Scintillua by Mitchell (mitchell.att.foicica.com).
+  -- Searches for the given *name* in the given *path*.
+  -- This is an implementation of Lua 5.2's `package.searchpath()` function for Lua 5.1.
+  function package.searchpath(name, path)
+    local tried = {}
+    for part in path:gmatch('[^;]+') do
+      local filename = part:gsub('%?', name)
+      local f = io.open(filename, 'r')
+      if f then f:close() return filename end
+      tried[#tried + 1] = ("no file '%s'"):format(filename)
+    end
+    return nil, table.concat(tried, '\n')
+  end
+end
+
+local function loadToTab(folder, tab, recursive, proto)
+  local files = (wx.wxFileExists(folder) and {folder}
+    or wx.wxDirExists(folder) and ide:GetFileList(folder, recursive, "*.lua")
+    or {})
+  for _, file in ipairs(files) do LoadLuaFileExt(tab, file, proto) end
+  return tab
+end
+
+function ide:LoadSpec(path)
+  loadToTab(path or "spec", ide.specs, true)
+  UpdateSpecs()
+end
+
+function ide:LoadTool(path)
+  local tools = {}
+  for name,tool in pairs(loadToTab(path or "tools", {}, false)) do
+    if tool.fninit then
+      local ok, err = pcall(tool.fninit, ide:GetMainFrame(), ide:GetMenuBar())
+      if not ok then ide:Print(("Error when initializing tool %s: %s"):format(name, err)) end
+    end
+    if tool.exec and tool.exec.name then table.insert(tools,tool) end
+  end
+
+  -- sort tools
+  table.sort(tools,function(a,b) return a.exec.name < b.exec.name end)
+
+  for _, tool in ipairs(tools) do
+    -- add menus for each
+    local id, menu = ide:AddTool(tool.exec.name, tool.exec.fn)
+    -- add descriptions
+    if id and tool.exec.description then menu:SetHelpString(id, tool.exec.description) end
+  end
+
+  return #tools
+end
+
+function ide:LoadInterpreter(path)
+  loadToTab(path or "interpreters", ide.interpreters, false, ide.proto.Interpreter)
+end
+
+function ide:LoadAPI(path)
+  local folder = path or "api"
+  local files = (wx.wxFileExists(folder) and {folder}
+    or wx.wxDirExists(folder) and ide:GetFileList(folder, true, "*.lua")
+    or {})
+  for _, file in ipairs(files) do
+    if not IsDirectory(file) then
+      local ftype, fname = file:match("api[/\\]([^/\\]+)[/\\](.*)%.")
+      if not ftype or not fname then
+        ide:Print(TR("The API file must be located in a subdirectory of the API directory."))
+      else
+        ide.apis[ftype] = ide.apis[ftype] or {}
+        -- make sure the path is absolute to access it if the current directory changes
+        ide.apis[ftype][fname] = ide:GetShortFilePath(MergeFullPath("", file))
+      end
+    end
+  end
+  ReloadAPIs("*")
 end
 
 dofile "src/version.lua"
@@ -338,12 +303,25 @@ local function setLuaPaths(mainpath, osname)
     .. mainpath.."lualibs/?/?/init.lua;"..mainpath.."lualibs/?/init.lua"
     .. (luadev_path and (';' .. luadev_path) or ''))
 
-  ide.osclibs = -- keep the list to use for other Lua versions
-    osname == "Windows" and mainpath.."bin/?.dll;"..mainpath.."bin/clibs/?.dll" or
-    osname == "Macintosh" and mainpath.."bin/lib?.dylib;"..mainpath.."bin/clibs/?.dylib" or
-    osname == "Unix" and mainpath..("bin/linux/%s/lib?.so;"):format(arch)
-                       ..mainpath..("bin/linux/%s/clibs/?.so"):format(arch) or
+  ide.osclibs = -- keep the list to use for various Lua versions
+    osname == "Windows" and table.concat({
+        mainpath.."bin/clibs/?.dll",
+      },";") or
+    osname == "Macintosh" and table.concat({
+        mainpath.."bin/clibs/?.dylib",
+        mainpath.."bin/clibs/lib?.dylib",
+      },";") or
+    osname == "Unix" and table.concat({
+        mainpath..("bin/linux/%s/clibs/?.so"):format(arch),
+        mainpath..("bin/linux/%s/clibs/lib?.so"):format(arch),
+      },";") or
     assert(false, "Unexpected OS name")
+
+  ide.oslibs = table.concat({
+        mainpath.."lualibs/?.lua",
+        mainpath.."lualibs/?/?.lua",
+        mainpath.."lualibs/?/init.lua",
+      },";")
 
   wx.wxSetEnv("LUA_CPATH",
     (os.getenv("LUA_CPATH") or ';') .. ';' .. ide.osclibs
@@ -360,10 +338,10 @@ ide.test.setLuaPaths = setLuaPaths
 
 ---------------
 -- process args
-local filenames = {}
 local configs = {}
 do
-  local arg = {...}
+  -- application parameters are passed as script parameters on Windows
+  local arg = ide.osname == "Windows" and {...} or arg
   -- application name is expected as the first argument
   local fullPath = arg[1] or "zbstudio"
 
@@ -372,24 +350,30 @@ do
   -- on Windows use GetExecutablePath, which is Unicode friendly,
   -- whereas wxGetCwd() is not (at least in wxlua 2.8.12.2).
   -- some wxlua version on windows report wx.dll instead of *.exe.
+  -- (although wxGetCwd() is Unicode friendly in wxwidgets 3.x)
   local exepath = wx.wxStandardPaths.Get():GetExecutablePath()
   if ide.osname == "Windows" and exepath:find("%.exe$") then
     fullPath = exepath
-  elseif not wx.wxIsAbsolutePath(fullPath) then
-    fullPath = wx.wxGetCwd().."/"..fullPath
+  -- path handling only works correctly on UTF8-valid strings, so check for that.
+  -- This may be caused by the launcher on Windows using ANSI methods for command line
+  -- processing. Keep the path as is for UTF-8 invalid strings as it's still good enough
+  elseif not wx.wxIsAbsolutePath(fullPath) and wx.wxString().FromUTF8(fullPath) == fullPath then
+    fullPath = MergeFullPath(wx.wxGetCwd(), fullPath)
   end
 
-  ide.editorFilename = fullPath
+  ide.editorFilename = ide:GetShortFilePath(fullPath)
   ide.appname = fullPath:match("([%w_-%.]+)$"):gsub("%.[^%.]*$","")
   assert(ide.appname, "no application path defined")
 
   for index = 2, #arg do
     if (arg[index] == "-cfg" and index+1 <= #arg) then
       table.insert(configs,arg[index+1])
-    elseif arg[index-1] ~= "-cfg"
+    elseif (arg[index] == "-cwd" and index+1 <= #arg) then
+      ide.cwd = arg[index+1]
+    elseif arg[index-1] ~= "-cfg" and arg[index-1] ~= "-cwd"
     -- on OSX command line includes -psn... parameter, don't include these
     and (ide.osname ~= 'Macintosh' or not arg[index]:find("^-psn")) then
-      table.insert(filenames,arg[index])
+      table.insert(ide.filenames,arg[index])
     end
   end
 
@@ -401,28 +385,6 @@ end
 
 ide.app = dofile(ide.appname.."/app.lua")
 local app = assert(ide.app)
-
-local function loadToTab(filter, folder, tab, recursive, proto)
-  if filter and type(filter) ~= 'function' then
-    filter = app.loadfilters[filter] or nil
-  end
-  for _, file in ipairs(FileSysGetRecursive(folder, recursive, "*.lua")) do
-    if not filter or filter(file) then
-      LoadLuaFileExt(tab, file, proto)
-    end
-  end
-  return tab
-end
-
-local function loadInterpreters(filter)
-  loadToTab(filter or "interpreters", "interpreters", ide.interpreters, false,
-    ide.proto.Interpreter)
-end
-
--- load tools
-local function loadTools(filter)
-  loadToTab(filter or "tools", "tools", ide.tools, false)
-end
 
 -- load packages
 local function processPackages(packages)
@@ -454,40 +416,20 @@ local function processPackages(packages)
   end
 end
 
-function UpdateSpecs()
-  for _, spec in pairs(ide.specs) do
+function UpdateSpecs(spec)
+  for _, spec in pairs(spec and {spec} or ide.specs) do
     spec.sep = spec.sep or "\1" -- default separator doesn't match anything
     spec.iscomment = {}
-    spec.iskeyword0 = {}
+    spec.iskeyword = {}
     spec.isstring = {}
-    if (spec.lexerstyleconvert) then
-      if (spec.lexerstyleconvert.comment) then
-        for _, s in pairs(spec.lexerstyleconvert.comment) do
-          spec.iscomment[s] = true
-        end
-      end
-      if (spec.lexerstyleconvert.keywords0) then
-        for _, s in pairs(spec.lexerstyleconvert.keywords0) do
-          spec.iskeyword0[s] = true
-        end
-      end
-      if (spec.lexerstyleconvert.stringtxt) then
-        for _, s in pairs(spec.lexerstyleconvert.stringtxt) do
-          spec.isstring[s] = true
-        end
-      end
+    spec.isnumber = {}
+    if spec.lexerstyleconvert then
+      for _, s in pairs(spec.lexerstyleconvert.comment or {}) do spec.iscomment[s] = true end
+      for _, s in pairs(spec.lexerstyleconvert.keywords0 or {}) do spec.iskeyword[s] = true end
+      for _, s in pairs(spec.lexerstyleconvert.stringtxt or {}) do spec.isstring[s] = true end
+      for _, s in pairs(spec.lexerstyleconvert.number or {}) do spec.isnumber[s] = true end
     end
   end
-end
-
--- load specs
-local function loadSpecs(filter)
-  loadToTab(filter or "specs", "spec", ide.specs, true)
-  UpdateSpecs()
-end
-
-function GetIDEString(keyword, default)
-  return app.stringtable[keyword] or default or keyword
 end
 
 ----------------------
@@ -509,9 +451,7 @@ do
         -- package can be defined inline, like "package {...}"
         if type(p) == 'table' then
           num = num + 1
-          local name = 'config'..num..'package'
-          ide.packages[name] = setmetatable(p, ide.proto.Plugin)
-          return ide.packages[name] -- this returns the package object, so it can be referenced
+          return ide:AddPackage('config'..num..'package', p)
         -- package can be included as "package 'file.lua'" or "package 'folder/'"
         elseif type(p) == 'string' then
           local config = ide.configqueue[#ide.configqueue]
@@ -520,7 +460,7 @@ do
               '.', 'packages/', '../packages/',
               ide.oshome and MergeFullPath(ide.oshome, "."..ide.appname.."/packages")}) do
             local p = MergeFullPath(config and MergeFullPath(config, packagepath) or packagepath, p)
-            pkg = wx.wxDirExists(p) and loadToTab(nil, p, {}, false, ide.proto.Plugin)
+            pkg = wx.wxDirExists(p) and loadToTab(p, {}, false, ide.proto.Plugin)
               or wx.wxFileExists(p) and LoadLuaFileExt({}, p, ide.proto.Plugin)
               or wx.wxFileExists(p..".lua") and LoadLuaFileExt({}, p..".lua", ide.proto.Plugin)
             if pkg then
@@ -538,11 +478,18 @@ do
   local includes = {}
   local include = function(c)
     if c then
-      for _, config in ipairs({ide.configqueue[#ide.configqueue], ide.configs.user, ide.configs.system}) do
-        local p = config and MergeFullPath(config.."/../", c)
-        includes[p] = (includes[p] or 0) + 1
-        if includes[p] > 1 or LoadLuaConfig(p) or LoadLuaConfig(p..".lua") then return end
-        includes[p] = includes[p] - 1
+      for _, config in ipairs({
+          -- `or ""` is needed to make sure that the loop is not stopped on `nil`
+          ide.configqueue[#ide.configqueue] or "",
+          (wx.wxFileName.SplitPath(ide.configs.user or "")),
+          (wx.wxFileName.SplitPath(ide.configs.system or "")),
+      }) do
+        if config > "" then
+          local p = MergeFullPath(config, c)
+          includes[p] = (includes[p] or 0) + 1
+          if includes[p] > 1 or LoadLuaConfig(p) or LoadLuaConfig(p..".lua") then return end
+          includes[p] = includes[p] - 1
+        end
       end
       ide:Print(("Can't find configuration file '%s' to process."):format(c))
     end
@@ -550,7 +497,12 @@ do
 
   setmetatable(ide.config, {
     __index = setmetatable({
-        load = {interpreters = loadInterpreters, specs = loadSpecs, tools = loadTools},
+        -- these are provided for compatibility only to avoid breaking configs using `load.*`
+        load = {
+          interpreters = function() ide:Print("Warning: using `load.interpreters()` in configuration settings is deprecated.") end,
+          specs = function() ide:Print("Warning: using `load.specs()` in configuration settings is deprecated.") end,
+          tools = function() ide:Print("Warning: using `load.tools()` in configuration settings is deprecated.") end,
+        },
         package = package,
         include = include,
     }, {__index = _G or _ENV})
@@ -559,7 +511,7 @@ end
 
 LoadLuaConfig(ide.appname.."/config.lua")
 
-ide.editorApp:SetAppName(GetIDEString("settingsapp"))
+ide.editorApp:SetAppName(ide:GetProperty("settingsapp"))
 
 -- check if the .ini file needs to be migrated on Windows
 if ide.osname == 'Windows' and ide.wxver >= "2.9.5" then
@@ -580,9 +532,8 @@ end
 
 if app.preinit then app.preinit() end
 
-loadInterpreters()
-loadSpecs()
-loadTools()
+ide:LoadInterpreter()
+ide:LoadSpec()
 
 do
   -- process configs
@@ -604,19 +555,19 @@ do
 
   local sep = GetPathSeparator()
   if ide.config.language then
-    LoadLuaFileExt(ide.config.messages, "cfg"..sep.."i18n"..sep..ide.config.language..".lua")
+    LoadLuaFileExt(ide.messages, "cfg"..sep.."i18n"..sep..ide.config.language..".lua")
   end
-  -- always load 'en' as it's requires as a fallback for pluralization
+  -- always load 'en' as it's required as a fallback for pluralization
   if ide.config.language ~= 'en' then
-    LoadLuaFileExt(ide.config.messages, "cfg"..sep.."i18n"..sep.."en.lua")
+    LoadLuaFileExt(ide.messages, "cfg"..sep.."i18n"..sep.."en.lua")
   end
 end
 
-processPackages(loadToTab(nil, "packages", {}, false, ide.proto.Plugin))
+processPackages(loadToTab("packages", {}, false, ide.proto.Plugin))
 if ide.oshome then
   local userpackages = MergeFullPath(ide.oshome, "."..ide.appname.."/packages")
   if wx.wxDirExists(userpackages) then
-    processPackages(loadToTab(nil, userpackages, {}, false, ide.proto.Plugin))
+    processPackages(loadToTab(userpackages, {}, false, ide.proto.Plugin))
   end
 end
 
@@ -627,10 +578,20 @@ for _, file in ipairs({
     "settings", "singleinstance", "iofilters", "markup",
     "gui", "filetree", "output", "debugger", "outline", "commandbar",
     "editor", "findreplace", "commands", "autocomplete", "shellbox", "markers",
-    "menu_file", "menu_edit", "menu_search",
-    "menu_view", "menu_project", "menu_tools", "menu_help",
+    "menu_file", "menu_edit", "menu_search", "menu_view", "menu_project", "menu_help",
     "print", "inspect" }) do
   dofile("src/editor/"..file..".lua")
+end
+
+-- delay loading tools until everything is loaded as it modifies the menus
+ide:LoadTool()
+-- delay loading APIs until auto-complete is loaded
+ide:LoadAPI()
+
+-- register the rest of the shortcuts to allow them to be overwritten from onRegister
+if ide.osname == 'Macintosh' then ide:SetAccelerator(ID.VIEWMINIMIZE, "Ctrl-M") end
+for _, sc in ipairs({ID.RESTART, ID.CLEAROUTPUT, ID.CLEARCONSOLE}) do
+  if ide.config.keymap[sc] then ide:SetAccelerator(sc, ide.config.keymap[sc]) end
 end
 
 -- register all the plugins
@@ -655,8 +616,8 @@ SettingsRestoreView()
 -- Load the filenames
 
 do
-  for _, filename in ipairs(filenames) do
-    if filename ~= "--" then ide:ActivateFile(filename) end
+  for _, filename in ipairs(ide.filenames) do
+    ide:ActivateFile(ide.cwd and GetFullPathIfExists(ide.cwd, filename) or filename)
   end
   if ide:GetEditorNotebook():GetPageCount() == 0 then NewFile() end
 end
@@ -671,11 +632,11 @@ if app.postinit then app.postinit() end
 -- conflicting events when the current focus is on a proper object.
 -- non-conflicting shortcuts are handled through key-down events.
 local remap = {
-  [ID_ADDWATCH]    = ide:GetWatch(),
-  [ID_EDITWATCH]   = ide:GetWatch(),
-  [ID_DELETEWATCH] = ide:GetWatch(),
-  [ID_RENAMEFILE]  = ide:GetProjectTree(),
-  [ID_DELETEFILE]  = ide:GetProjectTree(),
+  [ID.ADDWATCH]    = ide:GetWatch(),
+  [ID.EDITWATCH]   = ide:GetWatch(),
+  [ID.DELETEWATCH] = ide:GetWatch(),
+  [ID.RENAMEFILE]  = ide:GetProjectTree(),
+  [ID.DELETEFILE]  = ide:GetProjectTree(),
 }
 
 local function rerouteMenuCommand(obj, id)
@@ -726,7 +687,6 @@ local function resolveConflict(localid, globalid)
   end
 end
 
-local at = {}
 for lid in pairs(remap) do
   local shortcut = ide.config.keymap[lid]
   -- find a (potential) conflict for this shortcut (if any)
@@ -740,11 +700,9 @@ for lid in pairs(remap) do
   end
 end
 
-if ide.osname == 'Macintosh' then ide:SetAccelerator(ID_VIEWMINIMIZE, "Ctrl-M") end
-
 -- these shortcuts need accelerators handling as they are not present anywhere in the menu
-for _, id in ipairs({ ID_GOTODEFINITION, ID_RENAMEALLINSTANCES,
-    ID_REPLACEALLSELECTIONS, ID_QUICKADDWATCH, ID_QUICKEVAL, ID_ADDTOSCRATCHPAD}) do
+for _, id in ipairs({ ID.GOTODEFINITION, ID.RENAMEALLINSTANCES,
+    ID.REPLACEALLSELECTIONS, ID.QUICKADDWATCH, ID.QUICKEVAL, ID.ADDTOSCRATCHPAD}) do
   local ksc = ide.config.keymap[id]
   if ksc and ksc > "" then
     local fakeid = NewID()
@@ -756,7 +714,7 @@ for _, id in ipairs({ ID_GOTODEFINITION, ID_RENAMEALLINSTANCES,
   end
 end
 
-for _, id in ipairs({ ID_NOTEBOOKTABNEXT, ID_NOTEBOOKTABPREV }) do
+for _, id in ipairs({ ID.NOTEBOOKTABNEXT, ID.NOTEBOOKTABPREV }) do
   local ksc = ide.config.keymap[id]
   if ksc and ksc > "" then
     local nbc = "wxAuiNotebook"
@@ -770,7 +728,7 @@ for _, id in ipairs({ ID_NOTEBOOKTABNEXT, ID_NOTEBOOKTABPREV }) do
         if not notebook then return end
 
         local first, last = 0, notebook:GetPageCount()-1
-        local fwd = event:GetId() == ID_NOTEBOOKTABNEXT
+        local fwd = event:GetId() == ID.NOTEBOOKTABNEXT
         if fwd and notebook:GetSelection() == last then
           notebook:SetSelection(first)
         elseif not fwd and notebook:GetSelection() == first then
@@ -815,7 +773,8 @@ if ide.osname == 'Macintosh' then
       if nb:GetId() ~= ctrl:GetParent():GetId()
       or ctrl:GetClassInfo():GetClassName() == "wxAuiTabCtrl" then
         local frwd = not wx.wxGetKeyState(wx.WXK_SHIFT)
-        if not frwd and nb:GetSelection() == 0
+        if nb:GetId() ~= ctrl:GetParent():GetId()
+        or not frwd and nb:GetSelection() == 0
         or frwd and nb:GetSelection() == nb:GetPageCount()-1 then
           nb:AdvanceSelection(frwd)
           focus = nb:GetPage(nb:GetSelection())
@@ -876,13 +835,36 @@ if statusbarfix then ide.frame:GetStatusBar():Show(false) end
 -- somehow having wxAuiToolbar "steals" the focus from the editor on OSX;
 -- have to set the focus implicitly on the current editor (if any)
 if ide.osname == 'Macintosh' then
-  local editor = GetEditor()
+  local editor = ide:GetEditor()
   if editor then editor:SetFocus() end
 end
 
 -- enable full screen view if supported (for example, on OSX)
 if ide:IsValidProperty(ide:GetMainFrame(), "EnableFullScreenView") then
   ide:GetMainFrame():EnableFullScreenView()
+end
+
+if ide.osname == 'Macintosh' then
+  local args = {}
+  for _, a in ipairs(ide.arg or {}) do args[a] = true end
+
+  wx.wxGetApp().MacOpenFiles = function(files)
+    for _, filename in ipairs(files) do
+      -- in some cases, OSX sends the last command line parameter that looks like a filename
+      -- to OpenFile callback, which gets reported to MacOpenFiles.
+      -- I've tried to trace why this happens, but the only reference I could find
+      -- is this one: http://lists.apple.com/archives/cocoa-dev/2009/May/msg00480.html
+      -- To avoid this issue, the filename is skipped if it's present in `arg`.
+      -- Also see http://trac.wxwidgets.org/ticket/14558 for related discussion.
+      if not args[filename] then ide:ActivateFile(filename) end
+    end
+    args = {} -- reset the argument cache as it only needs to be checked on the initial launch
+  end
+end
+
+-- check for deprecated items in the config
+if type(ide.config.outputshell) == type({}) and next(ide.config.outputshell) then
+  ide:Print("Warning: using `outputshell.*` in configuration settings is no longer supported; use `output.*` and `console.*` instead.")
 end
 
 wx.wxGetApp():MainLoop()

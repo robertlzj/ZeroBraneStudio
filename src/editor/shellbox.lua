@@ -1,4 +1,4 @@
--- Copyright 2011-15 Paul Kulchenko, ZeroBrane LLC
+-- Copyright 2011-16 Paul Kulchenko, ZeroBrane LLC
 -- authors: Luxinia Dev (Eike Decker & Christoph Kubisch)
 ---------------------------------------------------------
 
@@ -15,8 +15,13 @@ local ERROR_MARKER = StylesGetMarker("error")
 local OUTPUT_MARKER = StylesGetMarker("output")
 local MESSAGE_MARKER = StylesGetMarker("message")
 
-console:SetFont(ide.font.oNormal)
-console:StyleSetFont(wxstc.wxSTC_STYLE_DEFAULT, ide.font.oNormal)
+local config = ide.config.console
+
+console:SetFont(wx.wxFont(config.fontsize or 10, wx.wxFONTFAMILY_MODERN, wx.wxFONTSTYLE_NORMAL,
+  wx.wxFONTWEIGHT_NORMAL, false, config.fontname or "",
+  config.fontencoding or wx.wxFONTENCODING_DEFAULT)
+)
+console:StyleSetFont(wxstc.wxSTC_STYLE_DEFAULT, console:GetFont())
 console:SetBufferedDraw(not ide.config.hidpi and true or false)
 console:StyleClearAll()
 
@@ -37,7 +42,7 @@ console:MarkerDefine(StylesGetMarker("output"))
 console:MarkerDefine(StylesGetMarker("message"))
 console:SetReadOnly(false)
 
-SetupKeywords(console,"lua",nil,ide.config.stylesoutshell,ide.font.oNormal,ide.font.oItalic)
+console:SetupKeywords("lua",nil,ide.config.stylesoutshell)
 
 local function getPromptLine()
   local totalLines = console:GetLineCount()
@@ -100,6 +105,7 @@ function ConsoleSelectCommand(point)
 end
 
 local currentHistory
+local lastCommand = ""
 local function getNextHistoryLine(forward, promptText)
   local count = console:GetLineCount()
   if currentHistory == nil then currentHistory = count end
@@ -113,7 +119,7 @@ local function getNextHistoryLine(forward, promptText)
   else
     currentHistory = console:MarkerPrevious(currentHistory-1, PROMPT_MARKER_VALUE)
     if currentHistory == wx.wxNOT_FOUND then
-      return ""
+      return lastCommand
     end
   end
   -- need to skip the current prompt line
@@ -194,10 +200,10 @@ local function shellPrint(marker, text, newline)
   console:EnsureVisibleEnforcePolicy(console:GetLineCount()-1)
 end
 
+displayShellDirect = function (...) shellPrint(nil, concat("\t", ...), true) end
 DisplayShell = function (...) shellPrint(OUTPUT_MARKER, concat("\t", ...), true) end
 DisplayShellErr = function (...) shellPrint(ERROR_MARKER, concat("\t", ...), true) end
 DisplayShellMsg = function (...) shellPrint(MESSAGE_MARKER, concat("\t", ...), true) end
-DisplayShellDirect = function (...) shellPrint(nil, concat("\t", ...), true) end
   -- don't print anything; just mark the line with a prompt mark
 DisplayShellPrompt = function (...) console:MarkerAdd(console:GetLineCount()-1, PROMPT_MARKER) end
 
@@ -279,7 +285,7 @@ local function createenv()
 
   local os = {
     exit = function()
-      ide.frame:AddPendingEvent(wx.wxCommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, ID_EXIT))
+      ide.frame:AddPendingEvent(wx.wxCommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, ID.EXIT))
     end,
   }
   env.os = setmetatable(os, {__index = _G.os})
@@ -334,7 +340,7 @@ local function executeShellCode(tx)
 
     -- set the project dir as the current dir to allow "require" calls
     -- to work from shell
-    local projectDir, cwd = FileTreeGetDir(), nil
+    local projectDir, cwd = ide:GetProject(), nil
     if projectDir and #projectDir > 0 then
       cwd = wx.wxFileName.GetCwd()
       wx.wxFileName.SetCwd(projectDir)
@@ -393,15 +399,16 @@ function ShellExecuteCode(code)
     bottomnotebook:SetSelection(index)
   end
 
-  DisplayShellDirect(code)
+  displayShellDirect(code)
   executeShellCode(code)
 end
 
 local function displayShellIntro()
   DisplayShellMsg(TR("Welcome to the interactive Lua interpreter.").." "
-    ..TR("Enter Lua code and press Enter to run it.").."\n"
-    ..TR("Use Shift-Enter for multiline code.").."  "
-    ..TR("Use 'clear' to clear the shell output and the history.").."\n"
+    ..TR("Enter Lua code and press Enter to run it.").." "
+    ..TR("Use Shift-Enter for multiline code.").."\n"
+    ..TR("Use 'clear' to clear the shell output and the history.").." "
+    ..TR("Use 'reset' to clear the environment.").."\n"
     ..TR("Prepend '=' to show complex values on multiple lines.").." "
     ..TR("Prepend '!' to force local execution."))
   DisplayShellPrompt('')
@@ -414,16 +421,23 @@ console:Connect(wx.wxEVT_KEY_DOWN,
     -- "break" aborts the processing and processes the key normally
     while true do
       local key = event:GetKeyCode()
+      local modifiers = event:GetModifiers()
       if key == wx.WXK_UP or key == wx.WXK_NUMPAD_UP then
         -- if we are below the prompt line, then allow to go up
         -- through multiline entry
         if console:GetCurrentLine() > getPromptLine() then break end
 
-        -- if we are not on the caret line, move normally
-        if not caretOnPromptLine() then break end
+        -- if we are not on the caret line, or are on wrapped caret line, move normally
+        if not caretOnPromptLine()
+        or console:GetLineWrapped(console:GetCurrentPos(), -1) then break end
 
-        local promptText = getPromptText()
-        setPromptText(getNextHistoryLine(false, promptText))
+        -- only change prompt if no modifiers are used (to allow for selection movement)
+        if modifiers == wx.wxMOD_NONE then
+          local promptText = getPromptText()
+          setPromptText(getNextHistoryLine(false, promptText))
+          -- move to the beginning of the updated prompt
+          console:GotoPos(console:PositionFromLine(getPromptLine()))
+        end
         return
       elseif key == wx.WXK_DOWN or key == wx.WXK_NUMPAD_DOWN then
         -- if we are above the last line, then allow to go down
@@ -431,11 +445,16 @@ console:Connect(wx.wxEVT_KEY_DOWN,
         local totalLines = console:GetLineCount()-1
         if console:GetCurrentLine() < totalLines then break end
 
-        -- if we are not on the caret line, move normally
-        if not caretOnPromptLine() then break end
+        -- if we are not on the caret line, or are on wrapped caret line, move normally
+        if not caretOnPromptLine()
+        or console:GetLineWrapped(console:GetCurrentPos(), 1) then break end
 
-        local promptText = getPromptText()
-        setPromptText(getNextHistoryLine(true, promptText))
+        -- only change prompt if no modifiers are used (to allow for selection movement)
+        if modifiers == wx.wxMOD_NONE then
+          local promptText = getPromptText()
+          setPromptText(getNextHistoryLine(true, promptText))
+          -- staying at the end of the updated prompt
+        end
         return
       elseif key == wx.WXK_TAB then
         -- if we are above the prompt line, then don't move
@@ -459,8 +478,9 @@ console:Connect(wx.wxEVT_KEY_DOWN,
       elseif key == wx.WXK_ESCAPE then
         setPromptText("")
         return
-      elseif key == wx.WXK_BACK then
-        if not caretOnPromptLine(true) then return end
+      elseif key == wx.WXK_BACK or key == wx.WXK_LEFT or key == wx.WXK_NUMPAD_LEFT then
+        if (key == wx.WXK_BACK or console:LineFromPosition(console:GetCurrentPos()) >= getPromptLine())
+        and not caretOnPromptLine(true) then return end
       elseif key == wx.WXK_DELETE or key == wx.WXK_NUMPAD_DELETE then
         if not caretOnPromptLine()
         or console:LineFromPosition(console:GetSelectionStart()) < getPromptLine() then
@@ -470,7 +490,7 @@ console:Connect(wx.wxEVT_KEY_DOWN,
           or key == wx.WXK_PAGEDOWN or key == wx.WXK_NUMPAD_PAGEDOWN
           or key == wx.WXK_END or key == wx.WXK_NUMPAD_END
           or key == wx.WXK_HOME or key == wx.WXK_NUMPAD_HOME
-          or key == wx.WXK_LEFT or key == wx.WXK_NUMPAD_LEFT
+          -- `key == wx.WXK_LEFT or key == wx.WXK_NUMPAD_LEFT` are handled separately
           or key == wx.WXK_RIGHT or key == wx.WXK_NUMPAD_RIGHT
           or key == wx.WXK_SHIFT or key == wx.WXK_CONTROL
           or key == wx.WXK_ALT then
@@ -488,16 +508,20 @@ console:Connect(wx.wxEVT_KEY_DOWN,
         if #promptText == 0 then return end -- nothing to execute, exit
         if promptText == 'clear' then
           console:Erase()
+        elseif promptText == 'reset' then
+          console:Reset()
+          setPromptText("")
         else
-          DisplayShellDirect('\n')
+          displayShellDirect('\n')
           executeShellCode(promptText)
         end
         currentHistory = getPromptLine() -- reset history
         return -- don't need to do anything else with return
-      elseif event:GetModifiers() == wx.wxMOD_NONE or console:GetSelectedText() == "" then
+      elseif modifiers == wx.wxMOD_NONE or console:GetSelectedText() == "" then
         -- move cursor to end if not already there
         if not caretOnPromptLine() then
           console:GotoPos(console:GetLength())
+          console:SetReadOnly(false) -- allow the current character to appear at the new location
         -- check if the selection starts before the prompt line and reset it
         elseif console:LineFromPosition(console:GetSelectionStart()) < getPromptLine() then
           console:GotoPos(console:GetLength())
@@ -514,12 +538,12 @@ local function inputEditable(line)
     not (console:LineFromPosition(console:GetSelectionStart()) < getPromptLine())
 end
 
--- new Scintilla (3.2.1) changed the way markers move when the text is updated
+-- Scintilla 3.2.1+ changed the way markers move when the text is updated
 -- ticket: http://sourceforge.net/p/scintilla/bugs/939/
 -- discussion: https://groups.google.com/forum/?hl=en&fromgroups#!topic/scintilla-interest/4giFiKG4VXo
 if ide.wxver >= "2.9.5" then
   -- this is a workaround that stores a position of the last prompt marker
-  -- before insert and restores the same position after (as the marker)
+  -- before insert and restores the same position after as the marker
   -- could have moved if the text is added at the beginning of the line.
   local promptAt
   console:Connect(wxstc.wxEVT_STC_MODIFIED,
@@ -552,7 +576,7 @@ console:Connect(wxstc.wxEVT_STC_DO_DROP,
     end
   end)
 
-if ide.config.outputshell.nomousezoom then
+if config.nomousezoom then
   -- disable zoom using mouse wheel as it triggers zooming when scrolling
   -- on OSX with kinetic scroll and then pressing CMD.
   console:Connect(wx.wxEVT_MOUSEWHEEL,
@@ -565,6 +589,15 @@ end
 displayShellIntro()
 
 function console:Erase()
+  -- save the last command to keep when the history is cleared
+  currentHistory = getPromptLine()
+  lastCommand = getNextHistoryLine(false, "")
+  -- allow writing as the editor may be read-only depending on current cursor position
+  self:SetReadOnly(false)
   self:ClearAll()
   displayShellIntro()
+end
+
+function console:Reset()
+  env = createenv() -- recreate the environment to "forget" all changes in it
 end

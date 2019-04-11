@@ -15,6 +15,10 @@ case "$(uname -m)" in
 		FPIC="-fpic"
 		ARCH="armhf"
 		;;
+        aarch64)
+		FPIC="-fpic"
+		ARCH="aarch64"
+		;;
 	*)
 		FPIC=""
 		ARCH="x86"
@@ -48,6 +52,18 @@ LUASEC_BASENAME="luasec-0.6"
 LUASEC_FILENAME="$LUASEC_BASENAME.zip"
 LUASEC_URL="https://github.com/brunoos/luasec/archive/$LUASEC_FILENAME"
 
+LFS_BASENAME="v_1_6_3"
+LFS_FILENAME="$LFS_BASENAME.tar.gz"
+LFS_URL="https://github.com/keplerproject/luafilesystem/archive/$LFS_FILENAME"
+
+LPEG_BASENAME="lpeg-1.0.0"
+LPEG_FILENAME="$LPEG_BASENAME.tar.gz"
+LPEG_URL="http://www.inf.puc-rio.br/~roberto/lpeg/$LPEG_FILENAME"
+
+LEXLPEG_BASENAME="scintillua_3.6.5-1"
+LEXLPEG_FILENAME="$LEXLPEG_BASENAME.zip"
+LEXLPEG_URL="https://foicica.com/scintillua/download/$LEXLPEG_FILENAME"
+
 WXWIDGETSDEBUG="--disable-debug"
 WXLUABUILD="MinSizeRel"
 
@@ -55,13 +71,21 @@ WXLUABUILD="MinSizeRel"
 for ARG in "$@"; do
   case $ARG in
   5.2)
+    BUILD_LUA=true
     BUILD_52=true
     ;;
   5.3)
+    BUILD_LUA=true
     BUILD_53=true
     BUILD_FLAGS="$BUILD_FLAGS -DLUA_COMPAT_APIINTCASTS"
     ;;
+  5.4)
+    BUILD_LUA=true
+    BUILD_54=true
+    BUILD_FLAGS="$BUILD_FLAGS -DLUA_COMPAT_APIINTCASTS"
+    ;;
   jit)
+    BUILD_LUA=true
     BUILD_JIT=true
     ;;
   wxwidgets)
@@ -79,15 +103,29 @@ for ARG in "$@"; do
   luasocket)
     BUILD_LUASOCKET=true
     ;;
+  lfs)
+    BUILD_LFS=true
+    ;;
+  lpeg)
+    BUILD_LPEG=true
+    ;;
+  lexlpeg)
+    BUILD_LEXLPEG=true
+    ;;
   debug)
     WXWIDGETSDEBUG="--enable-debug=max --enable-debug_gdb"
     WXLUABUILD="Debug"
+    DEBUGBUILD=true
     ;;
   all)
     BUILD_WXWIDGETS=true
     BUILD_LUA=true
     BUILD_WXLUA=true
     BUILD_LUASOCKET=true
+    BUILD_LUASEC=true
+    BUILD_LFS=true
+    BUILD_LPEG=true
+    BUILD_LEXLPEG=true
     ;;
   *)
     echo "Error: invalid argument $ARG"
@@ -144,17 +182,88 @@ if [ $BUILD_53 ]; then
   LUA_URL="http://www.lua.org/ftp/$LUA_FILENAME"
 fi
 
-if [ $BUILD_JIT ]; then
-  LUA_BASENAME="LuaJIT-2.0.4"
+if [ $BUILD_54 ]; then
+  LUAV="54"
+  LUAS=$LUAV
+  LUA_BASENAME="lua-5.4.0-work1"
   LUA_FILENAME="$LUA_BASENAME.tar.gz"
-  LUA_URL="http://luajit.org/download/$LUA_FILENAME"
+  LUA_URL="http://www.lua.org/work/$LUA_FILENAME"
+  LUA_COMPAT="MYCFLAGS=-DLUA_COMPAT_MODULE"
+fi
+
+if [ $BUILD_JIT ]; then
+  LUA_BASENAME="luajit"
+  LUA_URL="https://github.com/pkulchenko/luajit.git"
+fi
+
+# build Lua
+if [ $BUILD_LUA ]; then
+  if [ $BUILD_JIT ]; then
+    git clone "$LUA_URL" "$LUA_BASENAME"
+    (cd "$LUA_BASENAME"; git checkout v2.0.4)
+  else
+    wget -c "$LUA_URL" -O "$LUA_FILENAME" || { echo "Error: failed to download Lua"; exit 1; }
+    tar -xzf "$LUA_FILENAME"
+  fi
+  cd "$LUA_BASENAME"
+
+  if [ $BUILD_JIT ]; then
+    make CCOPT="-DLUAJIT_ENABLE_LUA52COMPAT" || { echo "Error: failed to build Lua"; exit 1; }
+    make install PREFIX="$INSTALL_DIR"
+    cp "$INSTALL_DIR"/bin/luajit "$INSTALL_DIR/bin/lua"
+    # don't copy luajit includes as the libraries should be compiled using Lua headers
+  else
+    # use POSIX as it has minimum dependencies (no readline and no ncurses required)
+    # LUA_USE_DLOPEN is required for loading libraries
+    (cd src; make all MYCFLAGS="$FPIC -DLUA_USE_POSIX -DLUA_USE_DLOPEN" MYLIBS="-Wl,-E -ldl") || { echo "Error: failed to build Lua"; exit 1; }
+    make install INSTALL_TOP="$INSTALL_DIR"
+  fi
+  cp "$INSTALL_DIR/bin/lua" "$INSTALL_DIR/bin/lua$LUAV"
+  [ $DEBUGBUILD ] || strip --strip-unneeded "$INSTALL_DIR/bin/lua$LUAV"
+
+  cd ..
+  rm -rf "$LUA_FILENAME" "$LUA_BASENAME"
+fi
+
+# build lexlpeg
+if [ $BUILD_LEXLPEG ]; then
+  # need wxwidgets/Scintilla and lua files
+  git clone "$WXWIDGETS_URL" "$WXWIDGETS_BASENAME" || { echo "Error: failed to get wxWidgets"; exit 1; }
+  wget --no-check-certificate -c "$LEXLPEG_URL" -O "$LEXLPEG_FILENAME" || { echo "Error: failed to download LexLPeg"; exit 1; }
+  unzip "$LEXLPEG_FILENAME"
+  cd "$LEXLPEG_BASENAME"
+
+  # replace loading lpeg with os and debug as they are needed for debugging;
+  # loading lpeg is not needed as it will be loaded from the Lua module.
+  sed -i 's/luaopen_lpeg, "lpeg"/luaopen_os, LUA_OSLIBNAME); l_openlib(luaopen_debug, LUA_DBLIBNAME/' LexLPeg.cxx
+
+  mkdir -p "$INSTALL_DIR/lib/lua/$LUAV/"
+  g++ $BUILD_FLAGS -o "$INSTALL_DIR/lib/lua/$LUAV/lexlpeg.so" \
+    "-I../$WXWIDGETS_BASENAME/src/stc/scintilla/include" "-I../$WXWIDGETS_BASENAME/src/stc/scintilla/lexlib/" \
+    -DSCI_LEXER -DLPEG_LEXER -DLPEG_LEXER_EXTERNAL \
+    LexLPeg.cxx ../$WXWIDGETS_BASENAME/src/stc/scintilla/lexlib/{PropSetSimple.cxx,WordList.cxx,LexerModule.cxx,LexerSimple.cxx,LexerBase.cxx,Accessor.cxx}
+
+  [ -f "$INSTALL_DIR/lib/lua/$LUAV/lexlpeg.so" ] || { echo "Error: LexLPeg.so isn't found"; exit 1; }
+  [ $DEBUGBUILD ] || strip --strip-unneeded "$INSTALL_DIR/lib/lua/$LUAV/lexlpeg.so"
+
+  cd ..
+  rm -rf "$LEXLPEG_BASENAME" "$LEXLPEG_FILENAME"
+  # don't delete wxwidgets, if it's requested to be built
+  [ $BUILD_WXWIDGETS ] || rm -rf "$WXWIDGETS_BASENAME"
 fi
 
 # build wxWidgets
 if [ $BUILD_WXWIDGETS ]; then
-  git clone "$WXWIDGETS_URL" "$WXWIDGETS_BASENAME" || { echo "Error: failed to get wxWidgets"; exit 1; }
-
+   # don't clone again, as it's already cloned for lexlpeg
+  [ $BUILD_LEXLPEG ] || git clone "$WXWIDGETS_URL" "$WXWIDGETS_BASENAME" || { echo "Error: failed to get wxWidgets"; exit 1; }
   cd "$WXWIDGETS_BASENAME"
+
+  # checkout the version that was used in wxwidgets upgrade to 3.1.x
+  git checkout WX_3_1_0-7d9d59
+
+  # refresh wxwidgets submodules
+  git submodule update --init --recursive
+
   ./configure --prefix="$INSTALL_DIR" $WXWIDGETSDEBUG --disable-shared --enable-unicode \
     --enable-compat28 \
     --with-libjpeg=builtin --with-libpng=builtin --with-libtiff=no --with-expat=no \
@@ -166,35 +275,13 @@ if [ $BUILD_WXWIDGETS ]; then
   rm -rf "$WXWIDGETS_BASENAME"
 fi
 
-# build Lua
-if [ $BUILD_LUA ]; then
-  wget -c "$LUA_URL" -O "$LUA_FILENAME" || { echo "Error: failed to download Lua"; exit 1; }
-  tar -xzf "$LUA_FILENAME"
-  cd "$LUA_BASENAME"
-
-  if [ $BUILD_JIT ]; then
-    make CCOPT="-DLUAJIT_ENABLE_LUA52COMPAT" || { echo "Error: failed to build Lua"; exit 1; }
-    make install PREFIX="$INSTALL_DIR"
-    cp "$INSTALL_DIR/bin/luajit" "$INSTALL_DIR/bin/lua"
-    # move luajit to lua as it's expected by luasocket and other components
-    cp "$INSTALL_DIR"/include/luajit*/* "$INSTALL_DIR/include/"
-  else
-    # use POSIX as it has minimum dependencies (no readline and no ncurses required)
-    # LUA_USE_DLOPEN is required for loading libraries
-    (cd src; make all MYCFLAGS="$FPIC -DLUA_USE_POSIX -DLUA_USE_DLOPEN" MYLIBS="-Wl,-E -ldl") || { echo "Error: failed to build Lua"; exit 1; }
-    make install INSTALL_TOP="$INSTALL_DIR"
-  fi
-  cp "$INSTALL_DIR/bin/lua" "$INSTALL_DIR/bin/lua$LUAV"
-
-  cd ..
-  rm -rf "$LUA_FILENAME" "$LUA_BASENAME"
-fi
-
 # build wxLua
 if [ $BUILD_WXLUA ]; then
   git clone "$WXLUA_URL" "$WXLUA_BASENAME" || { echo "Error: failed to get wxWidgets"; exit 1; }
   cd "$WXLUA_BASENAME/wxLua"
-  git checkout wxwidgets311
+
+  # checkout the version that matches what was used in wxwidgets upgrade to 3.1.x
+  git checkout WX_3_1_0-7d9d59
 
   # the following patches wxlua source to fix live coding support in wxlua apps
   # http://www.mail-archive.com/wxlua-users@lists.sourceforge.net/msg03225.html
@@ -212,7 +299,7 @@ if [ $BUILD_WXLUA ]; then
   (cd modules/luamodule; make $MAKEFLAGS) || { echo "Error: failed to build wxLua"; exit 1; }
   (cd modules/luamodule; make install)
   [ -f "$INSTALL_DIR/lib/libwx.so" ] || { echo "Error: libwx.so isn't found"; exit 1; }
-  [ "$WXLUABUILD" != "Debug" ] && strip --strip-unneeded "$INSTALL_DIR/lib/libwx.so"
+  [ $DEBUGBUILD ] || strip --strip-unneeded "$INSTALL_DIR/lib/libwx.so"
   cd ../..
   rm -rf "$WXLUA_BASENAME"
 fi
@@ -223,18 +310,48 @@ if [ $BUILD_LUASOCKET ]; then
   unzip "$LUASOCKET_FILENAME"
   cd "$LUASOCKET_BASENAME"
   mkdir -p "$INSTALL_DIR/lib/lua/$LUAV/"{mime,socket}
-  gcc $BUILD_FLAGS -o "$INSTALL_DIR/lib/lua/$LUAV/mime/core.so" src/mime.c -llua \
+  gcc $BUILD_FLAGS -o "$INSTALL_DIR/lib/lua/$LUAV/mime/core.so" src/mime.c \
     || { echo "Error: failed to build LuaSocket"; exit 1; }
   gcc $BUILD_FLAGS -o "$INSTALL_DIR/lib/lua/$LUAV/socket/core.so" \
-    src/{auxiliar.c,buffer.c,except.c,inet.c,io.c,luasocket.c,options.c,select.c,tcp.c,timeout.c,udp.c,usocket.c} -llua \
+    src/{auxiliar.c,buffer.c,except.c,inet.c,io.c,luasocket.c,options.c,select.c,tcp.c,timeout.c,udp.c,usocket.c} \
     || { echo "Error: failed to build LuaSocket"; exit 1; }
   mkdir -p "$INSTALL_DIR/share/lua/$LUAV/socket"
   cp src/{ftp.lua,http.lua,smtp.lua,tp.lua,url.lua} "$INSTALL_DIR/share/lua/$LUAV/socket"
   cp src/{ltn12.lua,mime.lua,socket.lua} "$INSTALL_DIR/share/lua/$LUAV"
   [ -f "$INSTALL_DIR/lib/lua/$LUAV/mime/core.so" ] || { echo "Error: mime/core.so isn't found"; exit 1; }
   [ -f "$INSTALL_DIR/lib/lua/$LUAV/socket/core.so" ] || { echo "Error: socket/core.so isn't found"; exit 1; }
+  [ $DEBUGBUILD ] || strip --strip-unneeded "$INSTALL_DIR/bin/lua/$LUAV/socket/core.so" "$INSTALL_DIR/bin/lua/$LUAV/mime/core.so"
   cd ..
   rm -rf "$LUASOCKET_FILENAME" "$LUASOCKET_BASENAME"
+fi
+
+# build lfs
+if [ $BUILD_LFS ]; then
+  wget --no-check-certificate -c "$LFS_URL" -O "$LFS_FILENAME" || { echo "Error: failed to download lfs"; exit 1; }
+  tar -xzf "$LFS_FILENAME"
+  mv "luafilesystem-$LFS_BASENAME" "$LFS_BASENAME"
+  cd "$LFS_BASENAME/src"
+  mkdir -p "$INSTALL_DIR/lib/lua/$LUAV/"
+  gcc $BUILD_FLAGS -o "$INSTALL_DIR/lib/lua/$LUAV/lfs.so" lfs.c \
+    || { echo "Error: failed to build lfs"; exit 1; }
+  [ -f "$INSTALL_DIR/lib/lua/$LUAV/lfs.so" ] || { echo "Error: lfs.so isn't found"; exit 1; }
+  [ $DEBUGBUILD ] || strip --strip-unneeded "$INSTALL_DIR/bin/lua/$LUAV/lfs.so"
+  cd ../..
+  rm -rf "$LFS_FILENAME" "$LFS_BASENAME"
+fi
+
+# build lpeg
+if [ $BUILD_LPEG ]; then
+  wget --no-check-certificate -c "$LPEG_URL" -O "$LPEG_FILENAME" || { echo "Error: failed to download lpeg"; exit 1; }
+  tar -xzf "$LPEG_FILENAME"
+  cd "$LPEG_BASENAME"
+  mkdir -p "$INSTALL_DIR/lib/lua/$LUAV/"
+  gcc $BUILD_FLAGS -o "$INSTALL_DIR/lib/lua/$LUAV/lpeg.so" lptree.c lpvm.c lpcap.c lpcode.c lpprint.c \
+    || { echo "Error: failed to build lpeg"; exit 1; }
+  [ -f "$INSTALL_DIR/lib/lua/$LUAV/lpeg.so" ] || { echo "Error: lpeg.so isn't found"; exit 1; }
+  [ $DEBUGBUILD ] || strip --strip-unneeded "$INSTALL_DIR/bin/lua/$LUAV/lpeg.so"
+  cd ..
+  rm -rf "$LPEG_FILENAME" "$LPEG_BASENAME"
 fi
 
 # build LuaSec
@@ -245,15 +362,16 @@ if [ $BUILD_LUASEC ]; then
   # the folder in the archive is "luasec-luasec-....", so need to fix
   mv "luasec-$LUASEC_BASENAME" $LUASEC_BASENAME
   cd "$LUASEC_BASENAME"
-  gcc $BUILD_FLAGS -o "$INSTALL_DIR/lib/lua/$LUAD/ssl.so" \
+  gcc $BUILD_FLAGS -o "$INSTALL_DIR/lib/lua/$LUAV/ssl.so" \
     src/luasocket/{timeout.c,buffer.c,io.c,usocket.c} src/{context.c,x509.c,ssl.c} -Isrc \
     -lssl -lcrypto \
     || { echo "Error: failed to build LuaSec"; exit 1; }
-  cp src/ssl.lua "$INSTALL_DIR/share/lua/$LUAD"
-  mkdir -p "$INSTALL_DIR/share/lua/$LUAD/ssl"
-  cp src/https.lua "$INSTALL_DIR/share/lua/$LUAD/ssl"
-  [ -f "$INSTALL_DIR/lib/lua/$LUAD/ssl.so" ] || { echo "Error: ssl.so isn't found"; exit 1; }
-  strip --strip-unneeded "$INSTALL_DIR/lib/lua/$LUAD/ssl.so"
+  mkdir -p "$INSTALL_DIR/share/lua/$LUAV/"
+  cp src/ssl.lua "$INSTALL_DIR/share/lua/$LUAV/"
+  mkdir -p "$INSTALL_DIR/share/lua/$LUAV/ssl"
+  cp src/https.lua "$INSTALL_DIR/share/lua/$LUAV/ssl/"
+  [ -f "$INSTALL_DIR/lib/lua/$LUAV/ssl.so" ] || { echo "Error: ssl.so isn't found"; exit 1; }
+  [ $DEBUGBUILD ] || strip --strip-unneeded "$INSTALL_DIR/lib/lua/$LUAV/ssl.so"
   cd ..
   rm -rf "$LUASEC_FILENAME" "$LUASEC_BASENAME"
 fi
@@ -261,7 +379,10 @@ fi
 # now copy the compiled dependencies to ZBS binary directory
 mkdir -p "$BIN_DIR" || { echo "Error: cannot create directory $BIN_DIR"; exit 1; }
 [ $BUILD_LUA ] && cp "$INSTALL_DIR/bin/lua$LUAS" "$BIN_DIR"
-[ $BUILD_WXLUA ] && cp "$INSTALL_DIR/lib/libwx.so" "$BIN_DIR"
+[ $BUILD_WXLUA ] && cp "$INSTALL_DIR/lib/libwx.so" "$BIN_DIR/clibs"
+[ $BUILD_LFS ] && cp "$INSTALL_DIR/lib/lua/$LUAV/lfs.so" "$BIN_DIR/clibs$LUAS"
+[ $BUILD_LPEG ] && cp "$INSTALL_DIR/lib/lua/$LUAV/lpeg.so" "$BIN_DIR/clibs$LUAS"
+[ $BUILD_LEXLPEG ] && cp "$INSTALL_DIR/lib/lua/$LUAV/lexlpeg.so" "$BIN_DIR/clibs$LUAS"
 
 if [ $BUILD_LUASOCKET ]; then
   mkdir -p "$BIN_DIR/clibs$LUAS/"{mime,socket}
@@ -270,9 +391,9 @@ if [ $BUILD_LUASOCKET ]; then
 fi
 
 if [ $BUILD_LUASEC ]; then
-  cp "$INSTALL_DIR/lib/lua/$LUAD/ssl.so" "$BIN_DIR/clibs$LUAS"
-  cp "$INSTALL_DIR/share/lua/$LUAD/ssl.lua" ../lualibs
-  cp "$INSTALL_DIR/share/lua/$LUAD/ssl/https.lua" ../lualibs/ssl
+  cp "$INSTALL_DIR/lib/lua/$LUAV/ssl.so" "$BIN_DIR/clibs$LUAS"
+  cp "$INSTALL_DIR/share/lua/$LUAV/ssl.lua" ../lualibs
+  cp "$INSTALL_DIR/share/lua/$LUAV/ssl/https.lua" ../lualibs/ssl
 fi
 
 echo "*** Build has been successfully completed ***"

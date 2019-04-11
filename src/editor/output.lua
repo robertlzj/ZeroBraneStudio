@@ -1,4 +1,4 @@
--- Copyright 2011-15 Paul Kulchenko, ZeroBrane LLC
+-- Copyright 2011-16 Paul Kulchenko, ZeroBrane LLC
 -- authors: Lomtik Software (J. Winwood & John Labenski)
 -- Luxinia Dev (Eike Decker & Christoph Kubisch)
 ---------------------------------------------------------
@@ -9,30 +9,57 @@ local bottomnotebook = frame.bottomnotebook
 local out = bottomnotebook.errorlog
 
 local MESSAGE_MARKER = StylesGetMarker("message")
+local ERROR_MARKER = StylesGetMarker("error")
 local PROMPT_MARKER = StylesGetMarker("prompt")
 local PROMPT_MARKER_VALUE = 2^PROMPT_MARKER
 
-out:Show(true)
-out:SetFont(ide.font.oNormal)
-out:StyleSetFont(wxstc.wxSTC_STYLE_DEFAULT, ide.font.oNormal)
+local config = ide.config.output
+
+out:SetFont(wx.wxFont(config.fontsize or 10, wx.wxFONTFAMILY_MODERN, wx.wxFONTSTYLE_NORMAL,
+  wx.wxFONTWEIGHT_NORMAL, false, config.fontname or "",
+  config.fontencoding or wx.wxFONTENCODING_DEFAULT)
+)
+out:StyleSetFont(wxstc.wxSTC_STYLE_DEFAULT, out:GetFont())
 out:SetBufferedDraw(not ide.config.hidpi and true or false)
 out:StyleClearAll()
 out:SetMarginWidth(1, 16) -- marker margin
 out:SetMarginType(1, wxstc.wxSTC_MARGIN_SYMBOL)
 out:MarkerDefine(StylesGetMarker("message"))
+out:MarkerDefine(StylesGetMarker("error"))
 out:MarkerDefine(StylesGetMarker("prompt"))
 out:SetReadOnly(true)
-if (ide.config.outputshell.usewrap) then
+if config.usewrap then
   out:SetWrapMode(wxstc.wxSTC_WRAP_WORD)
   out:SetWrapStartIndent(0)
   out:SetWrapVisualFlags(wxstc.wxSTC_WRAPVISUALFLAG_END)
   out:SetWrapVisualFlagsLocation(wxstc.wxSTC_WRAPVISUALFLAGLOC_END_BY_TEXT)
 end
 
-StylesApplyToEditor(ide.config.stylesoutshell,out,ide.font.oNormal,ide.font.oItalic)
+function OutputAddStyles(styles)
+  if ide.config.output.showansi and wxstc.wxSTC_LEX_ERRORLIST
+  and type(ide.config.output.ansimap) == type({}) then
+    out:SetLexer(wxstc.wxSTC_LEX_ERRORLIST)
+    out:SetProperty("lexer.errorlist.escape.sequences","1")
+
+    -- assign ansimap styles
+    -- if this styles table is the same as the default one, then make a copy
+    -- to avoid modifying all editor styles with "ansi" ones,
+    -- as they will conflict with lexer-specific styles
+    if ide.config.styles == styles then
+      local stylecopy = {}
+      for k,v in pairs(styles) do stylecopy[k] = v end
+      styles = stylecopy
+      ide.config.stylesoutshell = styles
+    end
+    for k,v in pairs(ide.config.output.ansimap) do styles["ansi"..k] = v end
+  end
+end
+
+OutputAddStyles(ide.config.stylesoutshell)
+StylesApplyToEditor(ide.config.stylesoutshell,out)
 
 function ClearOutput(force)
-  if not (force or ide:GetMenuBar():IsChecked(ID_CLEAROUTPUT)) then return end
+  if not (force or ide:GetMenuBar():IsChecked(ID.CLEAROUTPUTENABLE)) then return end
   out:SetReadOnly(false)
   out:ClearAll()
   out:SetReadOnly(true)
@@ -76,8 +103,9 @@ function DisplayOutputNoMarker(...)
   if promptLine ~= wx.wxNOT_FOUND then updateInputMarker() end
 end
 function DisplayOutput(...)
-  out:MarkerAdd(out:GetLineCount()-1, MESSAGE_MARKER)
+  local line = out:GetLineCount()-1
   DisplayOutputNoMarker(...)
+  out:MarkerAdd(line, MESSAGE_MARKER)
 end
 function DisplayOutputLn(...)
   DisplayOutput(...)
@@ -86,6 +114,12 @@ end
 
 function out:Print(...) return ide:Print(...) end
 function out:Write(...) return DisplayOutputNoMarker(...) end
+function out:Error(...)
+  local line = out:GetLineCount()-1
+  DisplayOutputNoMarker(...)
+  DisplayOutputNoMarker("\n")
+  out:MarkerAdd(line, ERROR_MARKER)
+end
 
 local streamins = {}
 local streamerrs = {}
@@ -94,10 +128,10 @@ local customprocs = {}
 local textout = '' -- this is a buffer for any text sent to external scripts
 
 function DetachChildProcess()
-  for _, custom in pairs(customprocs) do
+  for pid, custom in pairs(customprocs) do
     -- since processes are detached, their END_PROCESS event is not going
     -- to be called; call endcallback() manually if registered.
-    if custom.endcallback then custom.endcallback() end
+    if custom.endcallback then custom.endcallback(pid) end
     if custom.proc then custom.proc:Detach() end
   end
 end
@@ -113,7 +147,7 @@ function CommandLineRunning(uid)
 end
 
 function CommandLineToShell(uid,state)
-  for pid,custom in pairs(customprocs) do
+  for pid, custom in pairs(customprocs) do
     if (pid == uid or custom.uid == uid) and custom.proc and custom.proc.Exists(tonumber(pid)) then
       if (streamins[pid]) then streamins[pid].toshell = state end
       if (streamerrs[pid]) then streamerrs[pid].toshell = state end
@@ -123,7 +157,8 @@ function CommandLineToShell(uid,state)
 end
 
 -- logic to "unhide" wxwidget window using winapi
-pcall(require, 'winapi')
+local ok, winapi = pcall(require, 'winapi')
+if not ok then winapi = nil end
 local checkstart, checknext, checkperiod
 local pid = nil
 local function unHideWindow(pidAssign)
@@ -132,8 +167,8 @@ local function unHideWindow(pidAssign)
   if pidAssign then
     pid = pidAssign > 0 and pidAssign or nil
   end
-  if pid and winapi then
-    local now = TimeGet()
+  if pid and winapi then -- pid provided and winapi loaded
+    local now = ide:GetTime()
     if pidAssign and pidAssign > 0 then
       checkstart, checknext, checkperiod = now, now, 0.02
     end
@@ -240,7 +275,7 @@ function CommandLineRun(cmd,wdir,tooutput,nohide,stringcallback,uid,endcallback)
 
   OutputSetCallbacks(pid, proc, stringcallback, endcallback)
   customprocs[pid].uid=uid
-  customprocs[pid].started = TimeGet()
+  customprocs[pid].started = ide:GetTime()
 
   local streamout = proc and proc:GetOutputStream()
   if streamout then streamouts[pid] = {stream=streamout, callback=stringcallback, out=true} end
@@ -251,18 +286,26 @@ function CommandLineRun(cmd,wdir,tooutput,nohide,stringcallback,uid,endcallback)
   return pid
 end
 
+ide:GetCodePage() -- populate the codepage value if auto-detection is requested
+
 local readonce = 4096
 local maxread = readonce * 10 -- maximum number of bytes to read before pausing
-local function getStreams()
+local function getStreams(all)
   local function readStream(tab)
     for _,v in pairs(tab) do
       -- periodically stop reading to get a chance to process other events
       local processed = 0
-      while (v.check(v.proc) and processed <= maxread) do
+      while (v.check(v.proc) and (all or processed <= maxread)) do
         local str = v.stream:Read(readonce)
         -- the buffer has readonce bytes, so cut it to the actual size
         str = str:sub(1, v.stream:LastRead())
         processed = processed + #str
+
+        local codepage = ide:GetCodePage()
+        if codepage and FixUTF8(str) == nil and winapi then
+          -- this looks like invalid UTF-8 content, which may be in a different code page
+          str = winapi.encode(codepage, winapi.CP_UTF8, str)
+        end
 
         local pfn
         if (v.callback) then
@@ -275,7 +318,7 @@ local function getStreams()
         else
           DisplayOutputNoMarker(str)
           if str and (getInputLine() ~= wx.wxNOT_FOUND or out:GetReadOnly()) then
-            ActivateOutput()
+            ide:GetOutput():Activate()
             updateInputMarker()
           end
         end
@@ -304,37 +347,45 @@ local function getStreams()
   sendStream(streamouts)
 end
 
+function out:ProcessStreams()
+  if (#streamins or #streamerrs) then getStreams() end
+end
+
 out:Connect(wx.wxEVT_END_PROCESS, function(event)
     local pid = event:GetPid()
     if (pid ~= -1) then
-      getStreams()
+      getStreams(true)
       streamins[pid] = nil
       streamerrs[pid] = nil
       streamouts[pid] = nil
 
       if not customprocs[pid] then return end
-      if customprocs[pid].endcallback then customprocs[pid].endcallback() end
-      -- if this wasn't started with CommandLineRun, skip the rest
-      if not customprocs[pid].uid then return end
-
-      -- delete markers and set focus to the editor if there is an input marker
-      if out:MarkerPrevious(out:GetLineCount(), PROMPT_MARKER_VALUE) > wx.wxNOT_FOUND then
-        out:MarkerDeleteAll(PROMPT_MARKER)
-        local editor = GetEditor()
-        -- check if editor still exists; it may not if the window is closed
-        if editor then editor:SetFocus() end
+      if customprocs[pid].endcallback then
+        local ok, err = pcall(customprocs[pid].endcallback, pid, event:GetExitCode())
+        if not ok then ide:GetOutput():Error(("Post processing execution failed: %s"):format(err)) end
       end
-      unHideWindow(0)
-      ide:SetLaunchedProcess(nil)
-      nameTab(out, TR("Output"))
-      DisplayOutputLn(TR("Program completed in %.2f seconds (pid: %d).")
-        :format(TimeGet() - customprocs[pid].started, pid))
+
+      -- if this was started with uid (`CommandLineRun`), then it needs additional processing
+      if customprocs[pid].uid then
+        -- delete markers and set focus to the editor if there is an input marker
+        if out:MarkerPrevious(out:GetLineCount(), PROMPT_MARKER_VALUE) > wx.wxNOT_FOUND then
+          out:MarkerDeleteAll(PROMPT_MARKER)
+          local editor = ide:GetEditor()
+          -- check if editor still exists; it may not if the window is closed
+          if editor then editor:SetFocus() end
+        end
+        unHideWindow(0)
+        ide:SetLaunchedProcess(nil)
+        nameTab(out, TR("Output"))
+        DisplayOutputLn(TR("Program completed in %.2f seconds (pid: %d).")
+          :format(ide:GetTime() - customprocs[pid].started, pid))
+      end
       customprocs[pid] = nil
     end
   end)
 
 out:Connect(wx.wxEVT_IDLE, function()
-    if (#streamins or #streamerrs) then getStreams() end
+    out:ProcessStreams()
     if ide.osname == 'Windows' then unHideWindow() end
   end)
 
@@ -347,16 +398,16 @@ local function activateByPartialName(fname, jumpline, jumplinepos)
   local name
   local fixedname = fname:match(":%s+(.+)")
   if fixedname then
-    name = GetFullPathIfExists(FileTreeGetDir(), fixedname)
+    name = GetFullPathIfExists(ide:GetProject(), fixedname)
       or FileTreeFindByPartialName(fixedname)
   end
   name = name
-    or GetFullPathIfExists(FileTreeGetDir(), fname)
+    or GetFullPathIfExists(ide:GetProject(), fname)
     or FileTreeFindByPartialName(fname)
 
   local editor = LoadFile(name or fname,nil,true)
   if not editor then
-    local ed = GetEditor()
+    local ed = ide:GetEditor()
     if ed and ide:GetDocument(ed):GetFileName() == (name or fname) then
       editor = ed
     end
@@ -373,31 +424,19 @@ local function activateByPartialName(fname, jumpline, jumplinepos)
   return true
 end
 
-local jumptopatterns = { -- ["pattern"] = true/false for multiple/single
-  -- <filename>(line,linepos):
-  ["%s*(.-)%((%d+),(%d+)%)%s*:"] = false,
-  -- <filename>(line):
-  ["%s*(.-)%((%d+).*%)%s*:"] = false,
-  --[string "<filename>"]:line:
-  ['.-%[string "([^"]+)"%]:(%d+)%s*:'] = false,
-  -- <filename>:line:linepos
-  ["%s*(.-):(%d+):(%d+):"] = false,
-  -- <filename>:line:
-  ["%s*(.-):(%d+)%s*:"] = true,
-}
-
 out:Connect(wxstc.wxEVT_STC_DOUBLECLICK,
   function(event)
     local line = out:GetCurrentLine()
     local linetx = out:GetLineDyn(line)
 
     -- try to detect a filename and line in linetx
-    for pattern, multiple in pairs(jumptopatterns) do
+    for pattern, multiple in pairs(ide.config.output.lineactivate or {}) do
       local results = {}
       for fname, jumpline, jumplinepos in linetx:gmatch(pattern) do
         -- insert matches in reverse order (if any)
         table.insert(results, 1, {fname, jumpline, jumplinepos})
-        if not multiple then break end -- one match is enough if no multiple is requested
+        if type(multiple) == "function" then results[1] = {multiple(unpack(results[1]))} end
+        if multiple ~= true then break end -- one match is enough if no multiple is requested
       end
       for _, result in ipairs(results) do
         if activateByPartialName(unpack(result)) then
@@ -409,6 +448,7 @@ out:Connect(wxstc.wxEVT_STC_DOUBLECLICK,
         end
       end
     end
+    event:Skip()
   end)
 
 local function positionInLine(line)
@@ -424,57 +464,49 @@ end
 
 out:Connect(wx.wxEVT_KEY_DOWN,
   function (event)
-    -- this loop is only needed to allow to get to the end of function easily
-    -- "return" aborts the processing and ignores the key
-    -- "break" aborts the processing and processes the key normally
-    while true do
+    local key = event:GetKeyCode()
+    if out:GetReadOnly() then
       -- no special processing if it's readonly
-      if out:GetReadOnly() then break end
-
-      local key = event:GetKeyCode()
-      if key == wx.WXK_UP or key == wx.WXK_NUMPAD_UP then
-        if out:GetCurrentLine() > getInputLine() then break
-        else return end
-      elseif key == wx.WXK_DOWN or key == wx.WXK_NUMPAD_DOWN then
-        break -- can go down
-      elseif key == wx.WXK_LEFT or key == wx.WXK_NUMPAD_LEFT then
-        if not caretOnInputLine(true) then return end
-      elseif key == wx.WXK_BACK then
-        if not caretOnInputLine(true) then return end
-      elseif key == wx.WXK_DELETE or key == wx.WXK_NUMPAD_DELETE then
-        if not caretOnInputLine()
-        or out:LineFromPosition(out:GetSelectionStart()) < getInputLine() then
-          return
-        end
-      elseif key == wx.WXK_PAGEUP or key == wx.WXK_NUMPAD_PAGEUP
-          or key == wx.WXK_PAGEDOWN or key == wx.WXK_NUMPAD_PAGEDOWN
-          or key == wx.WXK_END or key == wx.WXK_NUMPAD_END
-          or key == wx.WXK_HOME or key == wx.WXK_NUMPAD_HOME
-          or key == wx.WXK_RIGHT or key == wx.WXK_NUMPAD_RIGHT
-          or key == wx.WXK_SHIFT or key == wx.WXK_CONTROL
-          or key == wx.WXK_ALT then
-        break
-      elseif key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER then
-        if not caretOnInputLine()
-        or out:LineFromPosition(out:GetSelectionStart()) < getInputLine() then
-          return
-        end
-        out:GotoPos(out:GetLength()) -- move to the end
-        textout = (textout or '') .. getInputText(inputBound)
-        -- remove selection if any, otherwise the text gets replaced
-        out:SetSelection(out:GetSelectionEnd()+1,out:GetSelectionEnd())
-        break -- don't need to do anything else with return
-      else
-        -- move cursor to end if not already there
-        if not caretOnInputLine() then
-          out:GotoPos(out:GetLength())
-        -- check if the selection starts before the input line and reset it
-        elseif out:LineFromPosition(out:GetSelectionStart()) < getInputLine(-1) then
-          out:GotoPos(out:GetLength())
-          out:SetSelection(out:GetSelectionEnd()+1,out:GetSelectionEnd())
-        end
+    elseif key == wx.WXK_UP or key == wx.WXK_NUMPAD_UP then
+      if out:GetCurrentLine() <= getInputLine() then return end
+    elseif key == wx.WXK_DOWN or key == wx.WXK_NUMPAD_DOWN then
+      -- can go down
+    elseif key == wx.WXK_LEFT or key == wx.WXK_NUMPAD_LEFT then
+      if not caretOnInputLine(true) then return end
+    elseif key == wx.WXK_BACK then
+      if not caretOnInputLine(true) then return end
+    elseif key == wx.WXK_DELETE or key == wx.WXK_NUMPAD_DELETE then
+      if not caretOnInputLine()
+      or out:LineFromPosition(out:GetSelectionStart()) < getInputLine() then
+        return
       end
-      break
+    elseif key == wx.WXK_PAGEUP or key == wx.WXK_NUMPAD_PAGEUP
+        or key == wx.WXK_PAGEDOWN or key == wx.WXK_NUMPAD_PAGEDOWN
+        or key == wx.WXK_END or key == wx.WXK_NUMPAD_END
+        or key == wx.WXK_HOME or key == wx.WXK_NUMPAD_HOME
+        or key == wx.WXK_RIGHT or key == wx.WXK_NUMPAD_RIGHT
+        or key == wx.WXK_SHIFT or key == wx.WXK_CONTROL
+        or key == wx.WXK_ALT then
+      -- fall through
+    elseif key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER then
+      if not caretOnInputLine()
+      or out:LineFromPosition(out:GetSelectionStart()) < getInputLine() then
+        return
+      end
+      out:GotoPos(out:GetLength()) -- move to the end
+      textout = (textout or '') .. getInputText(inputBound)
+      -- remove selection if any, otherwise the text gets replaced
+      out:SetSelection(out:GetSelectionEnd()+1,out:GetSelectionEnd())
+      -- don't need to do anything else with return
+    else
+      -- move cursor to end if not already there
+      if not caretOnInputLine() then
+        out:GotoPos(out:GetLength())
+      -- check if the selection starts before the input line and reset it
+      elseif out:LineFromPosition(out:GetSelectionStart()) < getInputLine(-1) then
+        out:GotoPos(out:GetLength())
+        out:SetSelection(out:GetSelectionEnd()+1,out:GetSelectionEnd())
+      end
     end
     event:Skip()
   end)
@@ -488,8 +520,7 @@ local function inputEditable(line)
     not (out:LineFromPosition(out:GetSelectionStart()) < getInputLine())
 end
 
-out:Connect(wxstc.wxEVT_STC_UPDATEUI,
-  function () out:SetReadOnly(not inputEditable()) end)
+out:Connect(wxstc.wxEVT_STC_UPDATEUI, function() out:SetReadOnly(not inputEditable()) end)
 
 -- only allow copy/move text by dropping to the input line
 out:Connect(wxstc.wxEVT_STC_DO_DROP,
@@ -499,7 +530,7 @@ out:Connect(wxstc.wxEVT_STC_DO_DROP,
     end
   end)
 
-if ide.config.outputshell.nomousezoom then
+if config.nomousezoom then
   -- disable zoom using mouse wheel as it triggers zooming when scrolling
   -- on OSX with kinetic scroll and then pressing CMD.
   out:Connect(wx.wxEVT_MOUSEWHEEL,

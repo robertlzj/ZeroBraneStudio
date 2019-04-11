@@ -1,4 +1,4 @@
--- Copyright 2011-15 Paul Kulchenko, ZeroBrane LLC
+-- Copyright 2011-16 Paul Kulchenko, ZeroBrane LLC
 -- authors: Lomtik Software (J. Winwood & John Labenski)
 -- Luxinia Dev (Eike Decker & Christoph Kubisch)
 ---------------------------------------------------------
@@ -35,7 +35,8 @@ if ini and wx.wxIsAbsolutePath(ini) and not wx.wxFileName(ini):IsDirWritable() t
   ini = nil
 end
 
-local settings = wx.wxFileConfig(GetIDEString("settingsapp"), GetIDEString("settingsvendor"), ini or "")
+local settings = wx.wxFileConfig(
+  ide:GetProperty("settingsapp"), ide:GetProperty("settingsvendor"), ini or "")
 ide.settings = settings
 
 local function settingsReadSafe(settings,what,default)
@@ -56,7 +57,7 @@ function SettingsRestoreFramePosition(window, windowName)
   local w = tonumber(select(2,settings:Read("w", 1100)))
   local h = tonumber(select(2,settings:Read("h", 700)))
 
-  if (s ~= -1) and (s ~= 1) and (s ~= 2) then
+  if (s ~= -1) then
     local clientX, clientY, clientWidth, clientHeight = wx.wxClientDisplayRect()
 
     -- if left-top corner outside of the left-top side, reset it to the screen side
@@ -77,9 +78,10 @@ function SettingsRestoreFramePosition(window, windowName)
     end
 
     window:SetSize(x, y, w, h)
-  elseif s == 1 then
-    window:Maximize(true)
   end
+
+  -- maximize after setting window position to make sure it's maximized on the correct monitor
+  if s == 1 then window:Maximize(true) end
 
   settings:SetPath(path)
 end
@@ -99,13 +101,10 @@ function SettingsSaveFramePosition(window, windowName)
   end
 
   settings:Write("s", s==2 and 0 or s) -- iconized maybe - but that shouldnt be saved
-
-  if s == 0 then
-    settings:Write("x", x)
-    settings:Write("y", y)
-    settings:Write("w", w)
-    settings:Write("h", h)
-  end
+  settings:Write("x", x)
+  settings:Write("y", y)
+  settings:Write("w", w)
+  settings:Write("h", h)
 
   settings:SetPath(path)
 end
@@ -308,8 +307,9 @@ local function saveNotebook(nb)
   local str = "nblayout|"
   
   for i=1,cnt do
-    local id = nb:GetPageText(i-1)
     local pg = nb:GetPage(i-1)
+    local doc = ide:GetDocument(pg)
+    local id = doc and doc:GetTabText() or nb:GetPageText(i-1)
     local x,y = pg:GetPosition():GetXY()
     addTo(pagesX,x,id)
     addTo(pagesY,y,id)
@@ -365,10 +365,12 @@ local function loadNotebook(nb,str,fnIdConvert)
   -- store old pages
   local currentpages, order = {}, {}
   for i=1,cnt do
-    local id = nb:GetPageText(i-1)
+    local pg = nb:GetPage(i-1)
+    local doc = ide:GetDocument(pg)
+    local id = doc and doc:GetTabText() or nb:GetPageText(i-1)
     local newid = fnIdConvert and fnIdConvert(id) or id
     currentpages[newid] = currentpages[newid] or {}
-    table.insert(currentpages[newid], {page = nb:GetPage(i-1), text = id, index = i-1})
+    table.insert(currentpages[newid], {page = pg, text = id, index = i-1})
     order[i] = newid
   end
 
@@ -422,41 +424,41 @@ function SettingsRestoreView()
   local path = settings:GetPath()
   settings:SetPath(listname)
 
-  local frame = ide.frame
-  local uimgr = frame.uimgr
+  local frame = ide:GetMainFrame()
+  local uimgr = ide:GetUIManager()
   
   local layoutcur = uimgr:SavePerspective()
   local layout = settingsReadSafe(settings,layoutlabel.UIMANAGER,"")
   if (layout ~= layoutcur) then
     -- save the current toolbar besth and re-apply after perspective is loaded
-    -- bestw and besth has two separate issues:
+    -- bestw and besth have two separate issues:
     -- (1) layout includes bestw that is only as wide as the toolbar size,
     -- this leaves default background on the right side of the toolbar;
     -- fix it by explicitly replacing with the screen width.
     -- (2) besth may be wrong after icon size changes.
-    local toolbar = frame.uimgr:GetPane("toolbar")
+    local toolbar = uimgr:GetPane("toolbar")
     local besth = toolbar:IsOk() and tonumber(uimgr:SavePaneInfo(toolbar):match("besth=([^;]+)"))
 
     -- reload the perspective if the saved one is not empty as it's different from the default
-    if #layout > 0 then uimgr:LoadPerspective(layout, false) end
+    if #layout > 0 then uimgr:LoadPerspective(layout, true) end
 
     local screenw = frame:GetClientSize():GetWidth()
-    if toolbar:IsOk() and screenw > 0 then toolbar:BestSize(screenw, besth or -1) end
+    if toolbar:IsOk() then toolbar:BestSize(screenw, besth or -1) end
 
     -- check if debugging panes are not mentioned and float them
     for _, name in pairs({"stackpanel", "watchpanel"}) do
-      local pane = frame.uimgr:GetPane(name)
+      local pane = uimgr:GetPane(name)
       if pane:IsOk() and not layout:find(name) then pane:Float() end
     end
 
     -- check if the toolbar is not mentioned in the layout and show it
     for _, name in pairs({"toolbar"}) do
-      local pane = frame.uimgr:GetPane(name)
+      local pane = uimgr:GetPane(name)
       if pane:IsOk() and not layout:find(name) then pane:Show() end
     end
 
     -- remove captions from all panes
-    local panes = frame.uimgr:GetAllPanes()
+    local panes = uimgr:GetAllPanes()
     for index = 0, panes:GetCount()-1 do
       uimgr:GetPane(panes:Item(index).name):CaptionVisible(false)
     end
@@ -471,8 +473,7 @@ function SettingsRestoreView()
   if (layout ~= layoutcur) then
     loadNotebook(ide:GetOutputNotebook(),layout,
       -- treat "Output (running)" same as "Output"
-      function(name) return
-        name:match(TR("Output")) or name:match("Output") or name end)
+      function(name) return name:match(TR("Output")) or name:match("Output") or name end)
   end
 
   layoutcur = saveNotebook(ide:GetProjectNotebook())
@@ -490,11 +491,10 @@ function SettingsRestoreView()
   layout = settingsReadSafe(settings,layoutlabel.NOTEBOOK,layoutcur)
   if (layout ~= layoutcur) then
     loadNotebook(ide.frame.notebook,layout)
-    local openDocuments = ide.openDocuments
     local nb = frame.notebook
     local cnt = nb:GetPageCount()
     for i=0,cnt-1 do
-      openDocuments[nb:GetPage(i):GetId()].index = i
+      ide:GetDocument(nb:GetPage(i)):SetTabText(nb:GetPageText(i))
     end
   end
 
@@ -516,7 +516,7 @@ function SettingsRestoreView()
     if newlayout ~= curlayout then m:LoadPerspective(newlayout) end
   end
 
-  local editor = GetEditor()
+  local editor = ide:GetEditor()
   if editor then editor:SetFocus() end
 
   settings:SetPath(path)
