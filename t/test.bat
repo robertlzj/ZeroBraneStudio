@@ -1,1 +1,1 @@
-@start "" zbstudio -cfg t/test.lua -cfg "ini='t/test.ini'"
+@zbstudio -cfg t/test.lua -cfg "ini='t/test.ini'"

@@ -1,4 +1,4 @@
--- Copyright 2011-16 Paul Kulchenko, ZeroBrane LLC
+-- Copyright 2011-15 Paul Kulchenko, ZeroBrane LLC
 -- authors: Lomtik Software (J. Winwood & John Labenski)
 -- Luxinia Dev (Eike Decker & Christoph Kubisch)
 ---------------------------------------------------------
@@ -31,17 +31,17 @@ do -- Add zoom submenu
   }
 
   frame:Connect(ID_ZOOMRESET, wx.wxEVT_COMMAND_MENU_SELECTED,
-    function()local editor = ide:GetEditorWithFocus()
+    function() local editor = GetEditorWithFocus()
       if editor then editor:SetZoom(0) end end)
   frame:Connect(ID_ZOOMIN, wx.wxEVT_COMMAND_MENU_SELECTED,
-    function() local editor = ide:GetEditorWithFocus()
+    function() local editor = GetEditorWithFocus()
       if editor then editor:SetZoom(editor:GetZoom()+1) end end)
   frame:Connect(ID_ZOOMOUT, wx.wxEVT_COMMAND_MENU_SELECTED,
-    function() local editor = ide:GetEditorWithFocus()
+    function() local editor = GetEditorWithFocus()
       if editor then editor:SetZoom(editor:GetZoom()-1) end end)
 
   -- only enable if there is an editor
-  local iseditor = function (event) event:Enable(ide:GetEditorWithFocus() ~= nil) end
+  local iseditor = function (event) event:Enable(GetEditorWithFocus() ~= nil) end
   for _, id in ipairs({ID_ZOOMRESET, ID_ZOOMIN, ID_ZOOMOUT}) do
     frame:Connect(id, wx.wxEVT_UPDATE_UI, iseditor)
   end
@@ -87,10 +87,10 @@ frame:Connect(ID_VIEWMINIMIZE, wx.wxEVT_COMMAND_MENU_SELECTED,
   function (event) ide.frame:Iconize(true) end)
 
 frame:Connect(ID_VIEWFULLSCREEN, wx.wxEVT_COMMAND_MENU_SELECTED, function ()
-    ide:ShowFullScreen(not frame:IsFullScreen())
+    ShowFullScreen(not frame:IsFullScreen())
   end)
 frame:Connect(ID_VIEWFULLSCREEN, wx.wxEVT_UPDATE_UI,
-  function (event) event:Enable(ide:GetEditor() ~= nil) end)
+  function (event) event:Enable(GetEditor() ~= nil) end)
 
 frame:Connect(ID_VIEWOUTPUT, wx.wxEVT_COMMAND_MENU_SELECTED, togglePanel)
 frame:Connect(ID_VIEWFILETREE, wx.wxEVT_COMMAND_MENU_SELECTED, togglePanel)

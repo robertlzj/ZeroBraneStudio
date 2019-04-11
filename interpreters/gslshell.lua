@@ -1,6 +1,6 @@
 -- Copyright 2011-12 Paul Kulchenko, ZeroBrane LLC
 
-local pathcache
+local gslshell
 local win = ide.osname == "Windows"
 
 return {
@@ -8,7 +8,7 @@ return {
   description = "GSL-shell interpreter",
   api = {"baselib"},
   frun = function(self,wfilename,rundebug)
-    local gslshell = ide.config.path.gslshell or pathcache -- check if the path is configured
+    gslshell = gslshell or ide.config.path.gslshell -- check if the path is configured
     if not gslshell then
       local sep = win and ';' or ':'
       local default = win and GenerateProgramFilesPath('gsl-shell', sep)..sep or ''
@@ -22,11 +22,10 @@ return {
         table.insert(paths, p)
       end
       if not gslshell then
-        ide:Print("Can't find gsl-shell executable in any of the following folders: "
+        DisplayOutputLn("Can't find gsl-shell executable in any of the following folders: "
           ..table.concat(paths, ", "))
         return
       end
-      pathcache = gslshell
     end
 
     do
@@ -51,14 +50,14 @@ return {
 
     local filepath = wfilename:GetFullPath()
     if rundebug then
-      ide:GetDebugger():SetOptions({runstart = ide.config.debugger.runonstart == true})
+      DebuggerAttachDefault({runstart = ide.config.debugger.runonstart == true})
 
       local tmpfile = wx.wxFileName()
       tmpfile:AssignTempFileName(".")
       filepath = tmpfile:GetFullPath()
       local f = io.open(filepath, "w")
       if not f then
-        ide:Print("Can't open temporary file '"..filepath.."' for writing.")
+        DisplayOutputLn("Can't open temporary file '"..filepath.."' for writing.")
         return
       end
       f:write(rundebug)
@@ -83,6 +82,7 @@ return {
       function() if rundebug then wx.wxRemoveFile(filepath) end end)
   end,
   hasdebugger = true,
+  fattachdebug = function(self) DebuggerAttachDefault() end,
   skipcompile = true,
   unhideanywindow = true,
   scratchextloop = false,

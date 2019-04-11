@@ -1,4 +1,4 @@
--- Copyright 2011-16 Paul Kulchenko, ZeroBrane LLC
+-- Copyright 2011-15 Paul Kulchenko, ZeroBrane LLC
 -- authors: Luxinia Dev (Eike Decker & Christoph Kubisch)
 ---------------------------------------------------------
 ----------
@@ -46,16 +46,16 @@ function StylesGetDefault()
     linenumber = {fg = {128, 128, 128}, bg = {250, 250, 250}},
     bracematch = {fg = {32, 128, 255}, b = true},
     bracemiss = {fg = {255, 128, 32}, b = true},
-    ctrlchar = {},
+    ctrlchar = nil,
     indent = {fg = {192, 192, 230}, bg = {255, 255, 255}},
-    calltip = {},
+    calltip = nil,
 
     -- common special (need custom fg & bg)
     sel = {bg = {208, 208, 208}},
     caret = {fg = {0, 0, 0}},
     caretlinebg = {bg = {240, 240, 230}},
     fold = {fg = {192, 192, 192}, bg = {250, 250, 250}, sel = {160, 128, 224}},
-    whitespace = {},
+    whitespace = nil,
     edge = {},
 
     -- deprecated; allowed for backward compatibility in case someone does
@@ -85,7 +85,6 @@ function StylesGetDefault()
       varglobal = {},
       varmasking = {},
       varmasked = {},
-      varself = {},
       searchmatch = {},
     },
   }
@@ -93,7 +92,7 @@ end
 
 local markers = {
   breakpoint = {0, wxstc.wxSTC_MARK_CIRCLE, {196, 64, 64}, {220, 64, 64}},
-  bookmark = {1, wxstc.wxSTC_MARK_BOOKMARK or wxstc.wxSTC_MARK_SHORTARROW, {16, 96, 128}, {96, 160, 220}},
+  bookmark = {1, wxstc.wxSTC_MARK_SHORTARROW, {16, 96, 128}, {96, 160, 220}},
   currentline = {2, wxstc.wxSTC_MARK_ARROW, {16, 128, 16}, {64, 220, 64}},
   message = {3, wxstc.wxSTC_MARK_CHARACTER+(' '):byte(), {0, 0, 0}, {220, 220, 220}},
   output = {4, wxstc.wxSTC_MARK_BACKGROUND, {0, 0, 0}, {240, 240, 240}},
@@ -124,7 +123,6 @@ function StylesAddMarker(marker, ch, fg, bg)
   return num
 end
 
-local function iscolor(c) return type(c) == "table" and #c == 3 end
 local function applymarker(editor,marker,clrfg,clrbg,clrsel)
   if (clrfg) then editor:MarkerSetForeground(marker,clrfg) end
   if (clrbg) then editor:MarkerSetBackground(marker,clrbg) end
@@ -132,12 +130,12 @@ local function applymarker(editor,marker,clrfg,clrbg,clrsel)
 end
 local specialmapping = {
   sel = function(editor,style)
-    if iscolor(style.fg) then
+    if (style.fg) then
       editor:SetSelForeground(1,wx.wxColour(unpack(style.fg)))
     else
       editor:SetSelForeground(0,wx.wxWHITE)
     end
-    if iscolor(style.bg) then
+    if (style.bg) then
       editor:SetSelBackground(1,wx.wxColour(unpack(style.bg)))
     else
       editor:SetSelBackground(0,wx.wxWHITE)
@@ -152,10 +150,10 @@ local specialmapping = {
 
   seladd = function(editor,style)
     if ide.wxver >= "2.9.5" then
-      if iscolor(style.fg) then
+      if (style.fg) then
         editor:SetAdditionalSelForeground(wx.wxColour(unpack(style.fg)))
       end
-      if iscolor(style.bg) then
+      if (style.bg) then
         editor:SetAdditionalSelBackground(wx.wxColour(unpack(style.bg)))
       end
       if (style.alpha) then
@@ -165,13 +163,13 @@ local specialmapping = {
   end,
 
   caret = function(editor,style)
-    if iscolor(style.fg) then
+    if (style.fg) then
       editor:SetCaretForeground(wx.wxColour(unpack(style.fg)))
     end
   end,
 
   caretlinebg = function(editor,style)
-    if iscolor(style.bg) then
+    if (style.bg) then
       editor:SetCaretLineBackground(wx.wxColour(unpack(style.bg)))
     end
     if (style.alpha and ide.wxver >= "2.9.5") then
@@ -180,23 +178,23 @@ local specialmapping = {
   end,
 
   whitespace = function(editor,style)
-    if iscolor(style.fg) then
+    if (style.fg) then
       editor:SetWhitespaceForeground(1,wx.wxColour(unpack(style.fg)))
     else
-      editor:SetWhitespaceForeground(0,wx.wxBLACK) -- color is not used, but needs to be provided
+      --editor:SetWhitespaceForeground(0)
     end
-    if iscolor(style.bg) then
+    if (style.bg) then
       editor:SetWhitespaceBackground(1,wx.wxColour(unpack(style.bg)))
     else
-      editor:SetWhitespaceBackground(0,wx.wxBLACK) -- color is not used, but needs to be provided
+      --editor:SetWhitespaceBackground(0)
     end
   end,
 
   fold = function(editor,style)
-    local clrfg = iscolor(style.fg) and wx.wxColour(unpack(style.fg))
-    local clrbg = iscolor(style.bg) and wx.wxColour(unpack(style.bg))
-    local clrhi = iscolor(style.hi) and wx.wxColour(unpack(style.hi))
-    local clrsel = iscolor(style.sel) and wx.wxColour(unpack(style.sel))
+    local clrfg = style.fg and wx.wxColour(unpack(style.fg))
+    local clrbg = style.bg and wx.wxColour(unpack(style.bg))
+    local clrhi = style.hi and wx.wxColour(unpack(style.hi))
+    local clrsel = style.sel and wx.wxColour(unpack(style.sel))
 
     -- if selected background is set then enable support for it
     if ide.wxver >= "2.9.5" and clrsel then editor:MarkerEnableHighlight(true) end
@@ -230,8 +228,10 @@ local specialmapping = {
   end,
 
   edge = function(editor,style)
-    if iscolor(style.fg) then
-      editor:SetEdgeColour(wx.wxColour(unpack(style.fg)))
+    if style.fg or style.col or style.mode then
+      editor:SetEdgeColour(wx.wxColour(unpack(style.fg or {220, 220, 220})))
+      editor:SetEdgeMode(style.mode or wxstc.wxSTC_EDGE_LINE)
+      editor:SetEdgeColumn(style.col or 80)
     end
   end,
 
@@ -239,8 +239,8 @@ local specialmapping = {
     for m, style in pairs(markers) do
       local id, ch, fg, bg = StylesGetMarker(m)
       if style.ch then ch = style.ch end
-      if iscolor(style.fg) then fg = wx.wxColour(unpack(tint(style.fg))) end
-      if iscolor(style.bg) then bg = wx.wxColour(unpack(tint(style.bg))) end
+      if style.fg then fg = wx.wxColour(unpack(tint(style.fg))) end
+      if style.bg then bg = wx.wxColour(unpack(tint(style.bg))) end
       editor:MarkerDefine(id, ch, fg, bg)
     end
   end,
@@ -251,8 +251,8 @@ local specialmapping = {
     -- don't color toolbars as they have their own color/style
     local skipcolor = {wxAuiToolBar = true, wxToolBar = true}
     local default = wxstc.wxSTC_STYLE_DEFAULT
-    local bg = iscolor(style.bg) and wx.wxColour(unpack(style.bg)) or editor:StyleGetBackground(default)
-    local fg = iscolor(style.fg) and wx.wxColour(unpack(style.fg)) or editor:StyleGetForeground(default)
+    local bg = style.bg and wx.wxColour(unpack(style.bg)) or editor:StyleGetBackground(default)
+    local fg = style.fg and wx.wxColour(unpack(style.fg)) or editor:StyleGetForeground(default)
 
     local uimgr = ide.frame.uimgr
     local panes = uimgr:GetAllPanes()
@@ -288,17 +288,8 @@ local defaultmapping = {
 }
 
 function StylesApplyToEditor(styles,editor,font,fontitalic,lexerconvert)
-  local defaultfg = styles.text and iscolor(styles.text.fg) and wx.wxColour(unpack(styles.text.fg)) or nil
-  local defaultbg = styles.text and iscolor(styles.text.bg) and wx.wxColour(unpack(styles.text.bg)) or nil
-
-  -- get the font as the default one
-  if not font then font = editor:GetFont() end
-
-  -- create italic font if only main font is provided
-  if font and not fontitalic then
-    fontitalic = wx.wxFont(font)
-    fontitalic:SetStyle(wx.wxFONTSTYLE_ITALIC)
-  end
+  local defaultfg = styles.text and styles.text.fg and wx.wxColour(unpack(styles.text.fg)) or nil
+  local defaultbg = styles.text and styles.text.bg and wx.wxColour(unpack(styles.text.bg)) or nil
 
   local function applystyle(style,id)
     editor:StyleSetFont(id, style.i and fontitalic or font)
@@ -313,7 +304,7 @@ function StylesApplyToEditor(styles,editor,font,fontitalic,lexerconvert)
     if style.hs then
       editor:StyleSetHotSpot(id, 1)
       -- if passed a color (table) as value, set it as foreground
-      if iscolor(style.hs) then
+      if type(style.hs) == 'table' then
         local color = wx.wxColour(unpack(style.hs))
         editor:SetHotspotActiveForeground(1, color)
       end
@@ -321,10 +312,10 @@ function StylesApplyToEditor(styles,editor,font,fontitalic,lexerconvert)
       editor:SetHotspotSingleLine(1)
     end
 
-    if iscolor(style.fg) or defaultfg then
+    if (style.fg or defaultfg) then
       editor:StyleSetForeground(id, style.fg and wx.wxColour(unpack(style.fg)) or defaultfg)
     end
-    if iscolor(style.bg) or defaultbg then
+    if (style.bg or defaultbg) then
       editor:StyleSetBackground(id, style.bg and wx.wxColour(unpack(style.bg)) or defaultbg)
     end
   end
@@ -355,7 +346,9 @@ function StylesApplyToEditor(styles,editor,font,fontitalic,lexerconvert)
       for _, outid in pairs(targets) do
         applystyle(style,outid)
       end
-    elseif style.st then
+    -- allow to specify style numbers, but exclude those styles
+    -- that may conflict with indicator numbers
+    elseif (style.st and style.st > 8 and style.st < wxstc.wxSTC_STYLE_DEFAULT) then
       applystyle(style,style.st)
     end
   end
@@ -378,7 +371,6 @@ function StylesApplyToEditor(styles,editor,font,fontitalic,lexerconvert)
 
     local fncall = ide:AddIndicator("core.fncall")
     local varlocal = ide:AddIndicator("core.varlocal")
-    local varself = ide:AddIndicator("core.varself")
     local varglobal = ide:AddIndicator("core.varglobal")
     local varmasking = ide:AddIndicator("core.varmasking")
     local varmasked = ide:AddIndicator("core.varmasked")
@@ -388,8 +380,6 @@ function StylesApplyToEditor(styles,editor,font,fontitalic,lexerconvert)
     editor:IndicatorSetForeground(fncall, wx.wxColour(unpack(type(indic.fncall) == type{} and indic.fncall.fg or {128, 128, 255})))
     editor:IndicatorSetStyle(varlocal, type(indic.varlocal) == type{} and indic.varlocal.st or wxstc.wxSTC_INDIC_DOTS or wxstc.wxSTC_INDIC_TT)
     editor:IndicatorSetForeground(varlocal, wx.wxColour(unpack(type(indic.varlocal) == type{} and indic.varlocal.fg or defaultfg)))
-    editor:IndicatorSetStyle(varself, type(indic.varself) == type{} and indic.varself.st or wxstc.wxSTC_INDIC_DOTS)
-    editor:IndicatorSetForeground(varself, wx.wxColour(unpack(type(indic.varself) == type{} and indic.varself.fg or defaultfg)))
     editor:IndicatorSetStyle(varglobal, type(indic.varglobal) == type{} and indic.varglobal.st or wxstc.wxSTC_INDIC_PLAIN)
     editor:IndicatorSetForeground(varglobal, wx.wxColour(unpack(type(indic.varglobal) == type{} and indic.varglobal.fg or defaultfg)))
     editor:IndicatorSetStyle(varmasking, type(indic.varmasking) == type{} and indic.varmasking.st or wxstc.wxSTC_INDIC_DASH or wxstc.wxSTC_INDIC_DIAGONAL)
@@ -404,17 +394,15 @@ end
 function ReApplySpecAndStyles()
   -- re-register markup styles as they are special:
   -- these styles need to be updated as they are based on comment styles
-  MarkupAddStyles(ide.config.styles)
-  OutputAddStyles(ide.config.stylesoutshell)
+  if MarkupAddStyles then MarkupAddStyles(ide.config.styles) end
 
   local errorlog = ide.frame.bottomnotebook.errorlog
   local shellbox = ide.frame.bottomnotebook.shellbox
-  shellbox:SetupKeywords("lua",nil,ide.config.stylesoutshell)
-  StylesApplyToEditor(ide.config.stylesoutshell,errorlog)
+  SetupKeywords(shellbox,"lua",nil,ide.config.stylesoutshell,ide.font.oNormal,ide.font.oItalic)
+  StylesApplyToEditor(ide.config.stylesoutshell,errorlog,ide.font.oNormal,ide.font.oItalic)
 
   for _, doc in pairs(ide:GetDocuments()) do
-    local editor = doc:GetEditor()
-    if editor.spec then editor:SetupKeywords(nil, editor.spec) end
+    if doc.editor.spec then doc.editor:SetupKeywords(nil, doc.editor.spec) end
   end
 end
 
@@ -422,17 +410,18 @@ function ApplyStyleConfig(config, style)
   if not wx.wxIsAbsolutePath(config)
     then config = MergeFullPath(GetPathWithSep(ide.editorFilename), config) end
 
-  local cfg = {wxstc = wxstc, math = math, print = function(...) ide:Print(...) end}
+  local cfg = {wxstc = wxstc, math = math, print = DisplayOutputLn,
+    path = {}, editor = {}, view ={}, acandtip = {}, outputshell = {}, debugger={}}
   local cfgfn, err = loadfile(config)
   if not cfgfn then
-    ide:Print(TR("Error while loading configuration file: %s"):format(err))
+    DisplayOutputLn(TR("Error while loading configuration file: %s"):format(err))
     return
   end
 
   setfenv(cfgfn,cfg)
   cfgfn, err = pcall(cfgfn,style)
   if not cfgfn then
-    ide:Print(TR("Error while processing configuration file: %s"):format(err))
+    DisplayOutputLn(TR("Error while processing configuration file: %s"):format(err))
     return
   end
 

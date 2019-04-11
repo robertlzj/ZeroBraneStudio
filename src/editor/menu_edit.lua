@@ -1,4 +1,4 @@
--- Copyright 2011-16 Paul Kulchenko, ZeroBrane LLC
+-- Copyright 2011-15 Paul Kulchenko, ZeroBrane LLC
 -- authors: Lomtik Software (J. Winwood & John Labenski)
 -- Luxinia Dev (Eike Decker & Christoph Kubisch)
 ---------------------------------------------------------
@@ -12,13 +12,13 @@ local frame = ide.frame
 local menuBar = frame.menuBar
 
 local editMenu = ide:MakeMenu {
-  { ID_UNDO, TR("&Undo")..KSC(ID_UNDO), TR("Undo last edit") },
-  { ID_REDO, TR("&Redo")..KSC(ID_REDO), TR("Redo last edit undone") },
-  { },
   { ID_CUT, TR("Cu&t")..KSC(ID_CUT), TR("Cut selected text to clipboard") },
   { ID_COPY, TR("&Copy")..KSC(ID_COPY), TR("Copy selected text to clipboard") },
   { ID_PASTE, TR("&Paste")..KSC(ID_PASTE), TR("Paste text from the clipboard") },
   { ID_SELECTALL, TR("Select &All")..KSC(ID_SELECTALL), TR("Select all text in the editor") },
+  { },
+  { ID_UNDO, TR("&Undo")..KSC(ID_UNDO), TR("Undo last edit") },
+  { ID_REDO, TR("&Redo")..KSC(ID_REDO), TR("Redo last edit undone") },
   { },
   { ID_SHOWTOOLTIP, TR("Show &Tooltip")..KSC(ID_SHOWTOOLTIP), TR("Show tooltip for current position; place cursor after opening bracket of function") },
   { ID_AUTOCOMPLETE, TR("Complete &Identifier")..KSC(ID_AUTOCOMPLETE), TR("Complete the current identifier") },
@@ -52,12 +52,12 @@ local function getCtrlWithFocus(edType)
 end
 
 local function onUpdateUIEditorInFocus(event)
-  event:Enable(ide:GetEditorWithFocus(ide:GetEditor()) ~= nil)
+  event:Enable(GetEditorWithFocus(GetEditor()) ~= nil)
 end
 
 local function onUpdateUIEditMenu(event)
   local menu_id = event:GetId()
-  local editor = ide:GetEditorWithFocus()
+  local editor = GetEditorWithFocus()
   if editor == nil then
     local editor = getCtrlWithFocus("wxTextCtrl")
     event:Enable(editor and (
@@ -89,7 +89,7 @@ end
 
 local function onEditMenu(event)
   local menu_id = event:GetId()
-  local editor = ide:GetEditorWithFocus()
+  local editor = GetEditorWithFocus()
   if editor == nil then
     local editor = getCtrlWithFocus("wxTextCtrl")
     if not editor or not (
@@ -123,12 +123,8 @@ local function onEditMenu(event)
 
   local spos, epos = editor:GetSelectionStart(), editor:GetSelectionEnd()
   if menu_id == ID_CUT then
+    if spos == epos then editor:LineCopy() else editor:CopyDyn() end
     if spos == epos then
-      if ide.config.editor.linecopy then editor:LineCopy() end
-    else
-      editor:CopyDyn()
-    end
-    if spos == epos and ide.config.editor.linecopy then
       local line = editor:LineFromPosition(spos)
       spos, epos = editor:PositionFromLine(line), editor:PositionFromLine(line+1)
       editor:SetSelectionStart(spos)
@@ -136,11 +132,7 @@ local function onEditMenu(event)
     end
     if spos ~= epos then editor:ClearAny() end
   elseif menu_id == ID_COPY then
-    if spos == epos then
-      if ide.config.editor.linecopy then editor:LineCopy() end
-    else
-      editor:CopyDyn()
-    end
+    if spos == epos then editor:LineCopy() else editor:CopyDyn() end
   elseif menu_id == ID_PASTE then
     -- first clear the text in case there is any hidden markup
     if spos ~= epos then editor:ClearAny() end
@@ -167,7 +159,7 @@ end
 
 frame:Connect(ID_COMMENT, wx.wxEVT_UPDATE_UI,
   function(event)
-    local editor = ide:GetEditorWithFocus(ide:GetEditor())
+    local editor = GetEditorWithFocus(GetEditor())
     event:Enable(editor ~= nil
       and ide:IsValidProperty(editor, "spec") and editor.spec
       and editor.spec.linecomment and true or false)
@@ -204,7 +196,7 @@ frame:Connect(ID_CLEARDYNAMICWORDS, wx.wxEVT_COMMAND_MENU_SELECTED,
 
 frame:Connect(ID_SHOWTOOLTIP, wx.wxEVT_COMMAND_MENU_SELECTED,
   function (event)
-    local editor = ide:GetEditor()
+    local editor = GetEditor()
 
     if (editor:CallTipActive()) then
       editor:CallTipCancel()
@@ -215,14 +207,14 @@ frame:Connect(ID_SHOWTOOLTIP, wx.wxEVT_COMMAND_MENU_SELECTED,
   end)
 
 frame:Connect(ID_AUTOCOMPLETE, wx.wxEVT_COMMAND_MENU_SELECTED,
-  function (event) EditorAutoComplete(ide:GetEditor()) end)
+  function (event) EditorAutoComplete(GetEditor()) end)
 
 frame:Connect(ID_AUTOCOMPLETEENABLE, wx.wxEVT_COMMAND_MENU_SELECTED,
   function (event) ide.config.autocomplete = event:IsChecked() end)
 
 frame:Connect(ID_COMMENT, wx.wxEVT_COMMAND_MENU_SELECTED,
   function (event)
-    local editor = ide:GetEditor()
+    local editor = GetEditor()
     local lc = editor.spec.linecomment
     if not lc then return end
 
@@ -271,17 +263,17 @@ frame:Connect(ID_COMMENT, wx.wxEVT_COMMAND_MENU_SELECTED,
   end)
 
 local function processSelection(editor, func)
-  local text = editor:GetSelectedTextDyn()
+  local text = editor:GetSelectedText()
   local line = editor:GetCurrentLine()
   local posinline = editor:GetCurrentPos() - editor:PositionFromLine(line)
   if #text == 0 then
     editor:SelectAll()
-    text = editor:GetSelectedTextDyn()
+    text = editor:GetSelectedText()
   end
   local wholeline = text:find("\n$")
   local buf = {}
-  for ln in string.gmatch(text..(wholeline and "" or "\n"), "(.-\r?\n)") do
-    table.insert(buf, ln)
+  for line in string.gmatch(text..(wholeline and "" or "\n"), "(.-\r?\n)") do
+    table.insert(buf, line)
   end
   if #buf > 0 then
     if func then func(buf) end
@@ -305,11 +297,11 @@ local function processSelection(editor, func)
         for line = #buf, 1, -1 do
           editor:SetTargetStart(line == 1 and ssel or editor:PositionFromLine(sline+line-1))
           editor:SetTargetEnd(line == eline-sline+1 and esel or editor:GetLineEndPosition(sline+line-1))
-          editor:ReplaceTargetDyn((buf[line]:gsub("\r?\n$", "")))
+          editor:ReplaceTarget((buf[line]:gsub("\r?\n$", "")))
         end
       else
         editor:TargetFromSelection()
-        editor:ReplaceTargetDyn(newtext)
+        editor:ReplaceTarget(newtext)
       end
       editor:EndUndoAction()
     end
@@ -319,7 +311,7 @@ local function processSelection(editor, func)
 end
 
 frame:Connect(ID_SORT, wx.wxEVT_COMMAND_MENU_SELECTED,
-  function (event) processSelection(ide:GetEditor(), table.sort) end)
+  function (event) processSelection(GetEditor(), table.sort) end)
 
 local function reIndent(editor, buf)
   local decindent, incindent = editor.spec.isdecindent, editor.spec.isincindent
@@ -342,7 +334,7 @@ local function reIndent(editor, buf)
   local isstatic = {}
   for line = 1, #buf+1 do
     local ls = editor:PositionFromLine(edline+line-1)
-    local style = bit.band(editor:GetStyleAt(ls), ide.STYLEMASK)
+    local style = bit.band(editor:GetStyleAt(ls), 31)
     -- don't reformat multi-line comments or strings
     isstatic[line] = (editor.spec.iscomment[style]
       or editor.spec.isstring[style]
@@ -377,35 +369,31 @@ end
 
 frame:Connect(ID_REINDENT, wx.wxEVT_COMMAND_MENU_SELECTED,
   function (event)
-    local editor = ide:GetEditor()
+    local editor = GetEditor()
     processSelection(editor, function(buf) reIndent(editor, buf) end)
   end)
 
 local function canfold(event)
-  local editor = ide:GetEditorWithFocus()
+  local editor = GetEditorWithFocus()
   event:Enable(editor and editor:CanFold() or false)
 end
 
 frame:Connect(ID_FOLD, wx.wxEVT_UPDATE_UI, canfold)
 frame:Connect(ID_FOLD, wx.wxEVT_COMMAND_MENU_SELECTED,
-  function (event) ide:GetEditorWithFocus():FoldSome() end)
+  function (event) GetEditorWithFocus():FoldSome() end)
 
 frame:Connect(ID_FOLDLINE, wx.wxEVT_UPDATE_UI, canfold)
 frame:Connect(ID_FOLDLINE, wx.wxEVT_COMMAND_MENU_SELECTED,
   function (event)
-    local editor = ide:GetEditorWithFocus()
-    local current = editor:GetCurrentLine()
-    editor:ToggleFold(current)
-    -- move up to the parent line if the current one is not visible
-    local visible = editor:GetLineVisible(current)
-    if not visible and editor:GetFoldParent(current) ~= wx.wxNOT_FOUND then editor:LineUp() end
+    local editor = GetEditorWithFocus()
+    editor:ToggleFold(editor:GetCurrentLine())
   end)
 
 local BOOKMARK_MARKER = StylesGetMarker("bookmark")
 
 frame:Connect(ID_BOOKMARKTOGGLE, wx.wxEVT_COMMAND_MENU_SELECTED,
-  function() ide:GetEditor():BookmarkToggle() end)
+  function() GetEditor():BookmarkToggle() end)
 frame:Connect(ID_BOOKMARKNEXT, wx.wxEVT_COMMAND_MENU_SELECTED,
-  function() ide:GetEditor():MarkerGotoNext(BOOKMARK_MARKER) end)
+  function() GetEditor():MarkerGotoNext(BOOKMARK_MARKER) end)
 frame:Connect(ID_BOOKMARKPREV, wx.wxEVT_COMMAND_MENU_SELECTED,
-  function() ide:GetEditor():MarkerGotoPrev(BOOKMARK_MARKER) end)
+  function() GetEditor():MarkerGotoPrev(BOOKMARK_MARKER) end)

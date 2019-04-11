@@ -19,66 +19,79 @@ return {
   fexepath = exePath,
   frun = function(self,wfilename,rundebug)
     local exe, iscustom = self:fexepath(version or "")
-    local filepath = ide:GetShortFilePath(wfilename:GetFullPath())
+    local filepath = wfilename:GetFullPath()
+
+    do
+      -- if running on Windows and can't open the file, this may mean that
+      -- the file path includes unicode characters that need special handling
+      local fh = io.open(filepath, "r")
+      if fh then fh:close() end
+      if ide.osname == 'Windows' and pcall(require, "winapi")
+      and wfilename:FileExists() and not fh then
+        winapi.set_encoding(winapi.CP_UTF8)
+        local shortpath = winapi.short_path(filepath)
+        if shortpath == filepath then
+          DisplayOutputLn(
+            ("Can't get short path for a Unicode file name '%s' to open the file.")
+            :format(filepath))
+          DisplayOutputLn(
+            ("You can enable short names by using `fsutil 8dot3name set %s: 0` and recreate the file or directory.")
+            :format(wfilename:GetVolume()))
+        end
+        filepath = shortpath
+      end
+    end
 
     if rundebug then
-      ide:GetDebugger():SetOptions({runstart = ide.config.debugger.runonstart == true})
+      DebuggerAttachDefault({runstart = ide.config.debugger.runonstart == true})
 
       -- update arg to point to the proper file
-      rundebug = ('if arg then arg[0] = [[%s]] end '):format(wfilename:GetFullPath())..rundebug
+      rundebug = ('if arg then arg[0] = [[%s]] end '):format(filepath)..rundebug
 
       local tmpfile = wx.wxFileName()
       tmpfile:AssignTempFileName(".")
-      filepath = ide:GetShortFilePath(tmpfile:GetFullPath())
-
-      local ok, err = FileWrite(filepath, rundebug)
-      if not ok then
-        ide:Print(("Can't open temporary file '%s' for writing: %s."):format(filepath, err))
+      filepath = tmpfile:GetFullPath()
+      local f = io.open(filepath, "w")
+      if not f then
+        DisplayOutputLn("Can't open temporary file '"..filepath.."' for writing.")
         return
       end
+      f:write(rundebug)
+      f:close()
     end
     local params = self:GetCommandLineArg("lua")
     local code = ([[-e "io.stdout:setvbuf('no')" "%s"]]):format(filepath)
     local cmd = '"'..exe..'" '..code..(params and " "..params or "")
 
-    -- modify LUA_CPATH and LUA_PATH to work with other Lua versions
-    local envcpath = "LUA_CPATH"
-    local envlpath = "LUA_PATH"
+    -- modify CPATH to work with other Lua versions
+    local envname = "LUA_CPATH"
     if version then
-      local env = "PATH_"..string.gsub(version, '%.', '_')
-      if os.getenv("LUA_C"..env) then envcpath = "LUA_C"..env end
-      if os.getenv("LUA_"..env) then envlpath = "LUA_"..env end
+      local env = "LUA_CPATH_"..string.gsub(version, '%.', '_')
+      if os.getenv(env) then envname = env end
     end
 
-    local cpath = os.getenv(envcpath)
+    local cpath = os.getenv(envname)
     if rundebug and cpath and not iscustom then
       -- prepend osclibs as the libraries may be needed for debugging,
       -- but only if no path.lua is set as it may conflict with system libs
-      wx.wxSetEnv(envcpath, ide.osclibs..';'..cpath)
+      wx.wxSetEnv(envname, ide.osclibs..';'..cpath)
     end
     if version and cpath then
-      -- adjust references to /clibs/ folders to point to version-specific ones
-      local cpath = os.getenv(envcpath)
+      local cpath = os.getenv(envname)
       local clibs = string.format('/clibs%s/', version):gsub('%.','')
       if not cpath:find(clibs, 1, true) then cpath = cpath:gsub('/clibs/', clibs) end
-      wx.wxSetEnv(envcpath, cpath)
-    end
-
-    local lpath = version and (not iscustom) and os.getenv(envlpath)
-    if lpath then
-      -- add oslibs libraries when LUA_PATH_5_x variables are set to allow debugging to work
-      wx.wxSetEnv(envlpath, lpath..';'..ide.oslibs)
+      wx.wxSetEnv(envname, cpath)
     end
 
     -- CommandLineRun(cmd,wdir,tooutput,nohide,stringcallback,uid,endcallback)
     local pid = CommandLineRun(cmd,self:fworkdir(wfilename),true,false,nil,nil,
       function() if rundebug then wx.wxRemoveFile(filepath) end end)
 
-    if (rundebug or version) and cpath then wx.wxSetEnv(envcpath, cpath) end
-    if lpath then wx.wxSetEnv(envlpath, lpath) end
+    if (rundebug or version) and cpath then wx.wxSetEnv(envname, cpath) end
     return pid
   end,
   hasdebugger = true,
+  fattachdebug = function(self) DebuggerAttachDefault() end,
   scratchextloop = false,
   unhideanywindow = true,
   takeparameters = true,

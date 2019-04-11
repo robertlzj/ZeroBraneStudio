@@ -82,10 +82,10 @@ styles.text = {bg = {240,240,220}}
 
 -- to change the default color scheme; check tomorrow.lua for the list
 -- of supported schemes or use cfg/scheme-picker.lua to pick a scheme.
+-- (no longer needed in v1.21+) local G = ... -- this now points to the global environment
 styles = loadfile('cfg/tomorrow.lua')('Tomorrow')
-stylesoutshell = styles -- apply the same scheme to Output/Console windows
-styles.auxwindow = styles.text -- apply text colors to auxiliary windows
-styles.calltip = styles.text -- apply text colors to tooltips
+-- also apply the same scheme to Output and Console windows
+stylesoutshell = styles
 
 -- to change markers used in console and output windows
 styles.marker = styles.marker or {}
@@ -113,7 +113,7 @@ styles.indicator.fncall.st = wxstc.wxSTC_INDIC_PLAIN
   --]]
 
 -- to enable additional spec files (like spec/glsl.lua)
--- (no longer needed in v1.51+) load.specs(function(file) return file:find('spec[/\\]glsl%.lua$') end)
+load.specs(function(file) return file:find('spec[/\\]glsl%.lua$') end)
 
 -- to specify a default EOL encoding to be used for new files:
 -- `wxstc.wxSTC_EOL_CRLF` or `wxstc.wxSTC_EOL_LF`;

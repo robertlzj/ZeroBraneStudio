@@ -37,20 +37,8 @@ local events = {
   onEditorPainted =    function(self, editor, event) end,
   onEditorCallTip =    function(self, editor, tip, value, eval) end, -- return false
   onFiletreeActivate = function(self, tree, event, item) end, -- return false
-  onFiletreePreExpand = function(self, tree, event, item) end, -- return false
-  onFiletreeExpand =   function(self, tree, event, item) end,
-  onFiletreePreCollapse = function(self, tree, event, item) end, -- return false
-  onFiletreeCollapse = function(self, tree, event, item) end,
   onFiletreeLDown =    function(self, tree, event, item) end,
   onFiletreeRDown =    function(self, tree, event, item) end,
-  onFiletreeFileMarkSelected = function(self, tree, item, filepath, selected) end,
-  onFiletreeFileAdd =  function(self, tree, item, filepath) end,
-  onFiletreeFileRemove = function(self, tree, item, filepath) end,
-  onFiletreeFileRefresh = function(self, tree, item, filepath) end,
-  onFiletreeFilePreRename = function(self, tree, item, filepath, target) end, -- return false
-  onFiletreeFileRename = function(self, tree, item, filepath, target) end,
-  onFiletreeFilePreDelete = function(self, tree, item, filepath) end, -- return false
-  onFiletreeFileDelete = function(self, tree, item, filepath) end,
   onMenuEditor =       function(self, menu, editor, event) end,
   onMenuEditorTab =    function(self, menu, notebook, event, index) end,
   onMenuOutput =       function(self, menu, editor, event) end,
@@ -89,9 +77,9 @@ local events = {
         and function(self, ed)
           -- document can be empty for newly added documents
           local doc = ide:GetDocument(ed)
-          ide:Print(self:GetFileName(), k, doc and doc:GetFilePath() or "new document") end
+          DisplayOutputLn(self:GetFileName(), k, doc and doc:GetFilePath() or "new document") end
         or function(self, ...)
-          ide:Print(self:GetFileName(), k, ...) end
+          DisplayOutputLn(self:GetFileName(), k, ...) end
     end
   end
 
@@ -102,9 +90,9 @@ local events = {
     menu:Enable(id, true)
 
     editor:Connect(id, wx.wxEVT_COMMAND_MENU_SELECTED,
-      function() ide:Print("Selected "..pos) end)
+      function() DisplayOutputLn("Selected "..pos) end)
 
-    ide:Print(self:GetFileName(), "onMenuEditor")
+    DisplayOutputLn(self:GetFileName(), "onMenuEditor")
   end
 
   P.onMenuEditorTab = function(self, menu, notebook, event, index)
@@ -112,9 +100,9 @@ local events = {
     menu:Enable(id, true)
 
     notebook:Connect(id, wx.wxEVT_COMMAND_MENU_SELECTED,
-      function() ide:Print("Selected "..index) end)
+      function() DisplayOutputLn("Selected "..index) end)
 
-    ide:Print(self:GetFileName(), "onMenuEditorTab")
+    DisplayOutputLn(self:GetFileName(), "onMenuEditorTab")
   end
 
   P.onMenuFiletree = function(self, menu, tree, event)
@@ -124,34 +112,34 @@ local events = {
     menu:Enable(id, true)
 
     tree:Connect(id, wx.wxEVT_COMMAND_MENU_SELECTED,
-      function() ide:Print("Selected "..name) end)
+      function() DisplayOutputLn("Selected "..name) end)
 
-    ide:Print(self:GetFileName(), "onMenuFiletree")
+    DisplayOutputLn(self:GetFileName(), "onMenuFiletree")
   end
 
   P.onInterpreterLoad = function(self, interpreter)
-    ide:Print(self:GetFileName(), "onInterpreterLoad", interpreter:GetFileName())
+    DisplayOutputLn(self:GetFileName(), "onInterpreterLoad", interpreter:GetFileName())
   end
 
   P.onInterpreterClose = function(self, interpreter)
-    ide:Print(self:GetFileName(), "onInterpreterClose", interpreter:GetFileName())
+    DisplayOutputLn(self:GetFileName(), "onInterpreterClose", interpreter:GetFileName())
   end
 
   P.onEditorPreSave = function(self, editor, filepath)
     if filepath and filepath:find("%.txt$") then
-      ide:Print(self:GetFileName(), "onEditorPreSave", "Aborted saving a .txt file")
+      DisplayOutputLn(self:GetFileName(), "onEditorPreSave", "Aborted saving a .txt file")
       return false
     else
-      ide:Print(self:GetFileName(), "onEditorPreSave", filepath or "New file")
+      DisplayOutputLn(self:GetFileName(), "onEditorPreSave", filepath or "New file")
     end
   end
 
   P.onEditorCharAdded = function(self, editor, event)
-    ide:Print(self:GetFileName(), "onEditorCharAdded", event:GetKey())
+    DisplayOutputLn(self:GetFileName(), "onEditorCharAdded", event:GetKey())
   end
 
   P.onEditorKeyDown = function(self, editor, event)
-    ide:Print(self:GetFileName(), "onEditorKeyDown", event:GetKeyCode())
+    DisplayOutputLn(self:GetFileName(), "onEditorKeyDown", event:GetKeyCode())
   end
 
 --]]

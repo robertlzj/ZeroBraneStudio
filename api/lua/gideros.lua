@@ -1,17 +1,10 @@
--- Copyright 2011-18 Paul Kulchenko, ZeroBrane LLC
+-- Copyright 2011-13 Paul Kulchenko, ZeroBrane LLC
 
 -- converted from http://docs.giderosmobile.com/reference/autocomplete.php;
--- (API for Gideros 2018.2.1 as of March 7th, 2018)
 -- also available in <Gideros>/Resources/gideros_annot.api.
 -- the conversion script is at the bottom of this file.
 
--- To process:
--- 1. download the API description and save it as gideros_annot.api
--- 2. run "../../bin/lua gideros.lua <gideros_annot.api >newapi" from ZBS/api/lua folder
--- 3. copy the content of "newapi" file to replace "api" table in gideros.lua
--- 4. launch the IDE and switch to gideros to confirm that it's loading without issues
-
-local api = {
+return {
  Accelerometer = {
   childs = {
    getAcceleration = {
@@ -30,8 +23,7 @@ local api = {
     args = "()",
     description = "Creates new Accelerometer instance",
     returns = "()",
-    type = "function",
-    valuetype = "Accelerometer"
+    type = "function"
    },
    start = {
     args = "()",
@@ -46,110 +38,6 @@ local api = {
     type = "method"
    }
   },
-  inherits = "Object",
-  type = "class"
- },
- Ads = {
-  childs = {
-   enableTesting = {
-    args = "()",
-    description = "Enable testing ads",
-    returns = "()",
-    type = "method"
-   },
-   get = {
-    args = "(property)",
-    description = "Gets property value of the ad",
-    returns = "()",
-    type = "method"
-   },
-   getHeight = {
-    args = "()",
-    description = "Gets the height of the ad",
-    returns = "()",
-    type = "method"
-   },
-   getPosition = {
-    args = "()",
-    description = "Gets x and y position of the ad",
-    returns = "()",
-    type = "method"
-   },
-   getWidth = {
-    args = "()",
-    description = "Gets width of the ad",
-    returns = "()",
-    type = "method"
-   },
-   getX = {
-    args = "()",
-    description = "Gets x position of the ad",
-    returns = "()",
-    type = "method"
-   },
-   getY = {
-    args = "()",
-    description = "Gets y position of the ad",
-    returns = "()",
-    type = "method"
-   },
-   hideAd = {
-    args = "()",
-    description = "Hides ads",
-    returns = "()",
-    type = "method"
-   },
-   new = {
-    args = "(adframework)",
-    description = "Initializes new ad framework",
-    returns = "()",
-    type = "function",
-    valuetype = "Ads"
-   },
-   set = {
-    args = "(property, value)",
-    description = "Sets property value of the ad",
-    returns = "()",
-    type = "method"
-   },
-   setAlignment = {
-    args = "(horizontal, vertical)",
-    description = "Sets alignment of the ad",
-    returns = "()",
-    type = "method"
-   },
-   setKey = {
-    args = "(...)",
-    description = "Set keys for the framework",
-    returns = "()",
-    type = "method"
-   },
-   setPosition = {
-    args = "(x, y)",
-    description = "Sets position of the ad",
-    returns = "()",
-    type = "method"
-   },
-   setX = {
-    args = "(x)",
-    description = "Sets x position of the ad",
-    returns = "()",
-    type = "method"
-   },
-   setY = {
-    args = "(y)",
-    description = "Sets y position of the ad",
-    returns = "()",
-    type = "method"
-   },
-   showAd = {
-    args = "(...)",
-    description = "Display ad",
-    returns = "()",
-    type = "method"
-   }
-  },
-  inherits = "EventDispatcher",
   type = "class"
  },
  AlertDialog = {
@@ -161,11 +49,10 @@ local api = {
     type = "method"
    },
    new = {
-    args = "(title, message, cancelButton [, button1, button2])",
+    args = "(title, message, cancelButton, button1, button2)",
     description = "",
     returns = "()",
-    type = "function",
-    valuetype = "AlertDialog"
+    type = "function"
    },
    show = {
     args = "()",
@@ -174,7 +61,6 @@ local api = {
     type = "method"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  Application = {
@@ -196,7 +82,6 @@ local api = {
     type = "value"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  Bitmap = {
@@ -211,8 +96,7 @@ local api = {
     args = "(texture)",
     description = "Creates a new Bitmap object",
     returns = "()",
-    type = "function",
-    valuetype = "Bitmap"
+    type = "function"
    },
    setAnchorPoint = {
     args = "(x, y)",
@@ -236,125 +120,11 @@ local api = {
   inherits = "Sprite",
   type = "class"
  },
- Controller = {
-  childs = {
-   getControllerName = {
-    args = "(id)",
-    description = "Gets the name of controller",
-    returns = "()",
-    type = "method"
-   },
-   getPlayerCount = {
-    args = "()",
-    description = "Returns amount of connected controllers",
-    returns = "()",
-    type = "method"
-   },
-   getPlayers = {
-    args = "()",
-    description = "Returns table with controller IDs",
-    returns = "()",
-    type = "method"
-   },
-   isAnyAvailable = {
-    args = "()",
-    description = "Return true if any controller is connected",
-    returns = "()",
-    type = "method"
-   },
-   vibrate = {
-    args = "(ms)",
-    description = "Vibrate the controller for provided amount of miliseconds",
-    returns = "()",
-    type = "method"
-   }
-  },
-  inherits = "EventDispatcher",
-  type = "class"
- },
  Core = {
   childs = {
-   asyncCall = {
-    args = "(task [, parameters])",
-    description = "Launch function on separate thread as background task",
-    returns = "()",
-    type = "function"
-   },
    class = {
     args = "([base])",
     description = "Creates and returns new Gideros class",
-    returns = "()",
-    type = "function"
-   },
-   frameStatistics = {
-    args = "()",
-    description = "Return table with data about frame",
-    returns = "()",
-    type = "function"
-   },
-   profilerReport = {
-    args = "()",
-    description = "Output profiling results",
-    returns = "()",
-    type = "function"
-   },
-   profilerReset = {
-    args = "()",
-    description = "Clear recorded profiling data",
-    returns = "()",
-    type = "function"
-   },
-   profilerStart = {
-    args = "()",
-    description = "Start profiling lua code",
-    returns = "()",
-    type = "function"
-   },
-   profilerStop = {
-    args = "()",
-    description = "Stop profiling",
-    returns = "()",
-    type = "function"
-   },
-   random = {
-    args = "([generator, bound1, bound2])",
-    description = "Generate a random number",
-    returns = "()",
-    type = "function"
-   },
-   randomSeed = {
-    args = "([generator, seed])",
-    description = "Set the random generator seed",
-    returns = "()",
-    type = "function"
-   },
-   yield = {
-    args = "(state)",
-    description = "Yield function running as background task",
-    returns = "()",
-    type = "function"
-   }
-  },
-  inherits = "Object",
-  type = "class"
- },
- Cryptography = {
-  childs = {
-   aesDecrypt = {
-    args = "(ciphertext, key [, iv, paddingType])",
-    description = "Decrypt an AES 128 string",
-    returns = "()",
-    type = "function"
-   },
-   aesEncrypt = {
-    args = "(plaintext, key [, iv, paddingType])",
-    description = "Encrypt a string with AES",
-    returns = "()",
-    type = "function"
-   },
-   md5 = {
-    args = "(input)",
-    description = "Compute the MD5 hash of the input string",
     returns = "()",
     type = "function"
    }
@@ -367,30 +137,6 @@ local api = {
     description = "value \"addedToStage\"",
     type = "value"
    },
-   AD_ACTION_BEGIN = {
-    description = "value \"adActionBegin\"",
-    type = "value"
-   },
-   AD_ACTION_END = {
-    description = "value \"adActionEnd\"",
-    type = "value"
-   },
-   AD_DISMISSED = {
-    description = "value \"adDismissed\"",
-    type = "value"
-   },
-   AD_ERROR = {
-    description = "value \"adError\"",
-    type = "value"
-   },
-   AD_FAILED = {
-    description = "value \"adFailed\"",
-    type = "value"
-   },
-   AD_RECEIVED = {
-    description = "value \"adReceived\"",
-    type = "value"
-   },
    APPLICATION_BACKGROUND = {
     description = "value \"applicationBackground\"",
     type = "value"
@@ -401,10 +147,6 @@ local api = {
    },
    APPLICATION_FOREGROUND = {
     description = "value \"applicationForeground\"",
-    type = "value"
-   },
-   APPLICATION_RESIZE = {
-    description = "value \"applicationResize\"",
     type = "value"
    },
    APPLICATION_RESUME = {
@@ -439,10 +181,6 @@ local api = {
     description = "value \"beginContact\"",
     type = "value"
    },
-   BEGIN_CONTACT_PARTICLE = {
-    description = "value \"beginContactParticle\"",
-    type = "value"
-   },
    CHECK_BILLING_SUPPORTED_COMPLETE = {
     description = "value \"checkBillingSupportedComplete\"",
     type = "value"
@@ -455,14 +193,6 @@ local api = {
     description = "value \"confirmNotificationComplete\"",
     type = "value"
    },
-   CONNECTED = {
-    description = "value \"connected\"",
-    type = "value"
-   },
-   DATA_AVAILABLE = {
-    description = "value \"dataAvailable\"",
-    type = "value"
-   },
    DIALOG_CANCEL = {
     description = "value \"dialogCancel\"",
     type = "value"
@@ -473,10 +203,6 @@ local api = {
    },
    DIALOG_ERROR = {
     description = "value \"dialogError\"",
-    type = "value"
-   },
-   DISCONNECTED = {
-    description = "value \"disconnected\"",
     type = "value"
    },
    END_CONTACT = {
@@ -503,18 +229,6 @@ local api = {
     description = "value \"keyUp\"",
     type = "value"
    },
-   LEFT_JOYSTICK = {
-    description = "value \"leftJoystick\"",
-    type = "value"
-   },
-   LEFT_TRIGGER = {
-    description = "value \"leftTrigger\"",
-    type = "value"
-   },
-   LOCAL_NOTIFICATION = {
-    description = "value \"localNotification\"",
-    type = "value"
-   },
    LOCATION_UPDATE = {
     description = "value \"locationUpdate\"",
     type = "value"
@@ -535,16 +249,8 @@ local api = {
     description = "value \"logoutComplete\"",
     type = "value"
    },
-   MEMORY_WARNING = {
-    description = "value \"memoryWarning\"",
-    type = "value"
-   },
    MOUSE_DOWN = {
     description = "value \"mouseDown\"",
-    type = "value"
-   },
-   MOUSE_HOVER = {
-    description = "value \"mouseHover\"",
     type = "value"
    },
    MOUSE_MOVE = {
@@ -553,10 +259,6 @@ local api = {
    },
    MOUSE_UP = {
     description = "value \"mouseUp\"",
-    type = "value"
-   },
-   MOUSE_WHEEL = {
-    description = "value \"mouseWheel\"",
     type = "value"
    },
    POST_SOLVE = {
@@ -573,18 +275,6 @@ local api = {
    },
    PURCHASE_STATE_CHANGE = {
     description = "value \"purchaseStateChange\"",
-    type = "value"
-   },
-   PUSH_NOTIFICATION = {
-    description = "value \"pushNotification\"",
-    type = "value"
-   },
-   PUSH_REGISTRATION = {
-    description = "value \"pushRegistration\"",
-    type = "value"
-   },
-   PUSH_REGISTRATION_ERROR = {
-    description = "value \"pushRegistrationError\"",
     type = "value"
    },
    REMOVED_FROM_STAGE = {
@@ -609,14 +299,6 @@ local api = {
    },
    RESTORE_TRANSACTIONS_COMPLETE = {
     description = "value \"restoreTransactionsComplete\"",
-    type = "value"
-   },
-   RIGHT_JOYSTICK = {
-    description = "value \"rightJoystick\"",
-    type = "value"
-   },
-   RIGHT_TRIGGER = {
-    description = "value \"rightTrigger\"",
     type = "value"
    },
    TIMER = {
@@ -663,8 +345,7 @@ local api = {
     args = "(type)",
     description = "Creates a new Event object",
     returns = "()",
-    type = "function",
-    valuetype = "Event"
+    type = "function"
    },
    stopPropagation = {
     args = "()",
@@ -673,7 +354,6 @@ local api = {
     type = "method"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  EventDispatcher = {
@@ -700,8 +380,7 @@ local api = {
     args = "()",
     description = "Creates a new EventDispatcher object",
     returns = "()",
-    type = "function",
-    valuetype = "EventDispatcher"
+    type = "function"
    },
    removeEventListener = {
     args = "(type, listener, data)",
@@ -710,7 +389,6 @@ local api = {
     type = "method"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  Facebook = {
@@ -799,18 +477,11 @@ local api = {
  },
  Font = {
   childs = {
-   getDefault = {
-    args = "()",
-    description = "Get default font",
-    returns = "()",
-    type = "function"
-   },
    new = {
     args = "(txtfile, imagefile, filtering)",
     description = "Creates a new Font object",
     returns = "()",
-    type = "function",
-    valuetype = "Font"
+    type = "function"
    }
   },
   inherits = "FontBase",
@@ -818,54 +489,6 @@ local api = {
  },
  FontBase = {
   childs = {
-   TLF_BOTTOM = {
-    description = "value \"TLF_BOTTOM\"",
-    type = "value"
-   },
-   TLF_CENTER = {
-    description = "value \"TLF_CENTER\"",
-    type = "value"
-   },
-   TLF_JUSTIFIED = {
-    description = "value \"TLF_JUSTIFIED\"",
-    type = "value"
-   },
-   TLF_LEFT = {
-    description = "value \"TLF_LEFT\"",
-    type = "value"
-   },
-   TLF_NOWRAP = {
-    description = "value \"TLF_NOWRAP\"",
-    type = "value"
-   },
-   TLF_REF_BASELINE = {
-    description = "value \"TLF_REF_BASELINE\"",
-    type = "value"
-   },
-   TLF_REF_BOTTOM = {
-    description = "value \"TLF_REF_BOTTOM\"",
-    type = "value"
-   },
-   TLF_REF_MIDDLE = {
-    description = "value \"TLF_REF_MIDDLE\"",
-    type = "value"
-   },
-   TLF_REF_TOP = {
-    description = "value \"TLF_REF_TOP\"",
-    type = "value"
-   },
-   TLF_RIGHT = {
-    description = "value \"TLF_RIGHT\"",
-    type = "value"
-   },
-   TLF_TOP = {
-    description = "value \"TLF_TOP\"",
-    type = "value"
-   },
-   TLF_VCENTER = {
-    description = "value \"TLF_VCENTER\"",
-    type = "value"
-   },
    getAdvanceX = {
     args = "(text, letterSpacing, size)",
     description = "",
@@ -889,15 +512,8 @@ local api = {
     description = "Returns the distance from one base line to the next",
     returns = "()",
     type = "method"
-   },
-   layoutText = {
-    args = "(text, width, height, flags, letterSpacing, lineSpacing, tabSpace)",
-    description = "Compute layout of text with given constraints",
-    returns = "()",
-    type = "method"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  Geolocation = {
@@ -930,8 +546,7 @@ local api = {
     args = "()",
     description = "Creates new Geolocation instance",
     returns = "()",
-    type = "function",
-    valuetype = "Geolocation"
+    type = "function"
    },
    setAccuracy = {
     args = "(accuracy)",
@@ -982,7 +597,7 @@ local api = {
     type = "method"
    }
   },
-  inherits = "Object",
+  inherits = "EventDispatcher",
   type = "class"
  },
  GoogleBilling = {
@@ -1096,8 +711,7 @@ local api = {
     args = "()",
     description = "Creates new Gyroscope instance",
     returns = "()",
-    type = "function",
-    valuetype = "Gyroscope"
+    type = "function"
    },
    start = {
     args = "()",
@@ -1112,238 +726,71 @@ local api = {
     type = "method"
    }
   },
-  inherits = "Object",
-  type = "class"
- },
- JS = {
-  childs = {
-   eval = {
-    args = "(code)",
-    description = "",
-    returns = "()",
-    type = "function"
-   }
-  },
   type = "class"
  },
  KeyCode = {
   childs = {
-   A = {
-    description = "value 65",
-    type = "value"
-   },
-   B = {
-    description = "value 66",
-    type = "value"
-   },
    BACK = {
-    description = "value 301",
-    type = "value"
-   },
-   C = {
-    description = "value 67",
+    description = "value \"301\"",
     type = "value"
    },
    CENTER = {
-    description = "value 304",
-    type = "value"
-   },
-   D = {
-    description = "value 68",
+    description = "value \"304\"",
     type = "value"
    },
    DOWN = {
-    description = "value 40",
-    type = "value"
-   },
-   E = {
-    description = "value 82",
-    type = "value"
-   },
-   F = {
-    description = "value 70",
-    type = "value"
-   },
-   G = {
-    description = "value 71",
-    type = "value"
-   },
-   H = {
-    description = "value 72",
-    type = "value"
-   },
-   I = {
-    description = "value 73",
-    type = "value"
-   },
-   J = {
-    description = "value 74",
-    type = "value"
-   },
-   K = {
-    description = "value 75",
-    type = "value"
-   },
-   L = {
-    description = "value 76",
+    description = "value \"40\"",
     type = "value"
    },
    L1 = {
-    description = "value 307",
+    description = "value \"307\"",
     type = "value"
    },
    LEFT = {
-    description = "value 37",
-    type = "value"
-   },
-   M = {
-    description = "value 77",
+    description = "value \"37\"",
     type = "value"
    },
    MENU = {
-    description = "value 303",
-    type = "value"
-   },
-   MOUSE_LEFT = {
-    description = "value 1",
-    type = "value"
-   },
-   MOUSE_MIDDLE = {
-    description = "value 4",
-    type = "value"
-   },
-   MOUSE_NONE = {
-    description = "value 0",
-    type = "value"
-   },
-   MOUSE_RIGHT = {
-    description = "value 2",
-    type = "value"
-   },
-   N = {
-    description = "value 78",
-    type = "value"
-   },
-   NUM_0 = {
-    description = "value 48",
-    type = "value"
-   },
-   NUM_1 = {
-    description = "value 49",
-    type = "value"
-   },
-   NUM_2 = {
-    description = "value 50",
-    type = "value"
-   },
-   NUM_3 = {
-    description = "value 51",
-    type = "value"
-   },
-   NUM_4 = {
-    description = "value 52",
-    type = "value"
-   },
-   NUM_5 = {
-    description = "value 53",
-    type = "value"
-   },
-   NUM_6 = {
-    description = "value 54",
-    type = "value"
-   },
-   NUM_7 = {
-    description = "value 55",
-    type = "value"
-   },
-   NUM_8 = {
-    description = "value 56",
-    type = "value"
-   },
-   NUM_9 = {
-    description = "value 57",
-    type = "value"
-   },
-   O = {
-    description = "value 79",
-    type = "value"
-   },
-   P = {
-    description = "value 80",
-    type = "value"
-   },
-   Q = {
-    description = "value 81",
+    description = "value \"303\"",
     type = "value"
    },
    R1 = {
-    description = "value 308",
+    description = "value \"308\"",
     type = "value"
    },
    RIGHT = {
-    description = "value 39",
-    type = "value"
-   },
-   S = {
-    description = "value 83",
+    description = "value \"39\"",
     type = "value"
    },
    SEARCH = {
-    description = "value 302",
+    description = "value \"302\"",
     type = "value"
    },
    SELECT = {
-    description = "value 305",
+    description = "value \"305\"",
     type = "value"
    },
    START = {
-    description = "value 306",
-    type = "value"
-   },
-   T = {
-    description = "value 84",
-    type = "value"
-   },
-   U = {
-    description = "value 85",
+    description = "value \"306\"",
     type = "value"
    },
    UP = {
-    description = "value 38",
-    type = "value"
-   },
-   V = {
-    description = "value 86",
-    type = "value"
-   },
-   W = {
-    description = "value 87",
+    description = "value \"38\"",
     type = "value"
    },
    X = {
-    description = "value 88",
+    description = "value \"88\"",
     type = "value"
    },
    Y = {
-    description = "value 89",
-    type = "value"
-   },
-   Z = {
-    description = "value 90",
+    description = "value \"89\"",
     type = "value"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  Matrix = {
   childs = {
-   getAnchorPosition = {
-    args = "()",
-    description = "Get anchor position from matrix transformation",
-    returns = "()",
-    type = "method"
-   },
    getElements = {
     args = "()",
     description = "Returns the elements of this matrix instance",
@@ -1374,60 +821,6 @@ local api = {
     returns = "()",
     type = "method"
    },
-   getMatrix = {
-    args = "()",
-    description = "Get all 16 elements of 4x4 matrix",
-    returns = "()",
-    type = "method"
-   },
-   getPosition = {
-    args = "()",
-    description = "Get position from matrix transformation",
-    returns = "()",
-    type = "method"
-   },
-   getRotationX = {
-    args = "()",
-    description = "Get rotation for x axis",
-    returns = "()",
-    type = "method"
-   },
-   getRotationY = {
-    args = "()",
-    description = "Get rotation on y axis",
-    returns = "()",
-    type = "method"
-   },
-   getRotationZ = {
-    args = "()",
-    description = "Get rotation for z axis",
-    returns = "()",
-    type = "method"
-   },
-   getScale = {
-    args = "()",
-    description = "Get scale from matrix transformation",
-    returns = "()",
-    type = "method"
-   },
-   getScaleX = {
-    args = "()",
-    description = "Get scale on x axis",
-    returns = "()",
-    type = "method"
-   },
-   getScaleY = {
-    args = "()",
-    description = "Get scale on y axis",
-    returns = "()",
-    type = "method"
-   },
-   getScaleZ = {
-    args = "()",
-    description = "Get scale on z axis",
-    returns = "()",
-    type = "method"
-   },
    getTx = {
     args = "()",
     description = "Returns the value of the tx component",
@@ -1440,78 +833,11 @@ local api = {
     returns = "()",
     type = "method"
    },
-   getTz = {
-    args = "()",
-    description = "Returns the value of the tz component",
-    returns = "()",
-    type = "method"
-   },
-   getX = {
-    args = "()",
-    description = "Get x position",
-    returns = "()",
-    type = "method"
-   },
-   getY = {
-    args = "()",
-    description = "Get y position",
-    returns = "()",
-    type = "method"
-   },
-   getZ = {
-    args = "()",
-    description = "Get z position",
-    returns = "()",
-    type = "method"
-   },
-   invert = {
-    args = "()",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   multiply = {
-    args = "(matrix)",
-    description = "Multiply current matrix with new one",
-    returns = "()",
-    type = "method"
-   },
    new = {
     args = "(m11, m12, m21, m22, tx, ty)",
     description = "Creates a new Matrix object",
     returns = "()",
-    type = "function",
-    valuetype = "Matrix"
-   },
-   orthographicProjection = {
-    args = "(left, right, bottom, top, near, far)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   perspectiveProjection = {
-    args = "(fov, aspect, near, far)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   rotate = {
-    args = "(angle, x vector, y vector, z vector)",
-    description = "Combine existing rotation with provided",
-    returns = "()",
-    type = "method"
-   },
-   scale = {
-    args = "(x scale [, y scale, z scale])",
-    description = "Combine existing scale with provided scale",
-    returns = "()",
-    type = "method"
-   },
-   setAnchorPosition = {
-    args = "(x, y [, z])",
-    description = "Transform matrix for setting anchor position",
-    returns = "()",
-    type = "method"
+    type = "function"
    },
    setElements = {
     args = "(m11, m12, m21, m22, tx, ty)",
@@ -1543,60 +869,6 @@ local api = {
     returns = "()",
     type = "method"
    },
-   setMatrix = {
-    args = "([m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44])",
-    description = "Set all 16 elements of 4x4 matrix",
-    returns = "()",
-    type = "method"
-   },
-   setPosition = {
-    args = "(x, y [, z])",
-    description = "Transform matrix for setting position",
-    returns = "()",
-    type = "method"
-   },
-   setRotationX = {
-    args = "(x rotation)",
-    description = "Set rotation on x axis",
-    returns = "()",
-    type = "method"
-   },
-   setRotationY = {
-    args = "(y rotation)",
-    description = "Set rotation on y axis",
-    returns = "()",
-    type = "method"
-   },
-   setRotationZ = {
-    args = "(z rotation)",
-    description = "Set rotation on z axis",
-    returns = "()",
-    type = "method"
-   },
-   setScale = {
-    args = "(x [, y, z])",
-    description = "Transform matrix for setting scale",
-    returns = "()",
-    type = "method"
-   },
-   setScaleX = {
-    args = "(x scale)",
-    description = "Set scale on x axis",
-    returns = "()",
-    type = "method"
-   },
-   setScaleY = {
-    args = "(y scale)",
-    description = "Set scale on y axis",
-    returns = "()",
-    type = "method"
-   },
-   setScaleZ = {
-    args = "(z scale)",
-    description = "Set scale on z axis",
-    returns = "()",
-    type = "method"
-   },
    setTx = {
     args = "(tx)",
     description = "Sets the value of the tx component",
@@ -1608,45 +880,8 @@ local api = {
     description = "Sets the value of the ty component",
     returns = "()",
     type = "method"
-   },
-   setTz = {
-    args = "(tz)",
-    description = "Sets the value of the tz component",
-    returns = "()",
-    type = "method"
-   },
-   setX = {
-    args = "(x)",
-    description = "Set x position",
-    returns = "()",
-    type = "method"
-   },
-   setY = {
-    args = "(y)",
-    description = "Set y position",
-    returns = "()",
-    type = "method"
-   },
-   setZ = {
-    args = "(z)",
-    description = "Set z position",
-    returns = "()",
-    type = "method"
-   },
-   transformPoint = {
-    args = "()",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   translate = {
-    args = "(x [, y, z])",
-    description = "Combine existing translation with provided translation",
-    returns = "()",
-    type = "method"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  Mesh = {
@@ -1664,7 +899,7 @@ local api = {
     type = "method"
    },
    clearTexture = {
-    args = "([slot])",
+    args = "()",
     description = "",
     returns = "()",
     type = "method"
@@ -1681,60 +916,11 @@ local api = {
     returns = "()",
     type = "method"
    },
-   getColor = {
-    args = "(i)",
-    description = "Returns color and alpha of the i-th element from color array",
-    returns = "()",
-    type = "method"
-   },
-   getColorArraySize = {
-    args = "()",
-    description = "Get size of the Color array",
-    returns = "()",
-    type = "method"
-   },
-   getIndex = {
-    args = "(i)",
-    description = "Returns the i-th element from index array",
-    returns = "()",
-    type = "method"
-   },
-   getIndexArraySize = {
-    args = "()",
-    description = "Get size of the Index array",
-    returns = "()",
-    type = "method"
-   },
-   getTextureCoordinate = {
-    args = "(i)",
-    description = "Returns u and v coordinate of the i-th element from texture coordinate array",
-    returns = "()",
-    type = "method"
-   },
-   getTextureCoordinateArraySize = {
-    args = "()",
-    description = "Get size of the Texture Coordinate array",
-    returns = "()",
-    type = "method"
-   },
-   getVertex = {
-    args = "(i)",
-    description = "Returns x and y coordinate of the i-th element from vertex array",
-    returns = "()",
-    type = "method"
-   },
-   getVertexArraySize = {
-    args = "()",
-    description = "Get size of the Vertices array",
-    returns = "()",
-    type = "method"
-   },
    new = {
-    args = "([is3d])",
+    args = "()",
     description = "",
     returns = "()",
-    type = "function",
-    valuetype = "Mesh"
+    type = "function"
    },
    resizeColorArray = {
     args = "(size)",
@@ -1778,12 +964,6 @@ local api = {
     returns = "()",
     type = "method"
    },
-   setGenericArray = {
-    args = "(index, type, mult, count, data)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
    setIndex = {
     args = "(i, index)",
     description = "",
@@ -1803,7 +983,7 @@ local api = {
     type = "method"
    },
    setTexture = {
-    args = "(texture [, slot])",
+    args = "(texture)",
     description = "",
     returns = "()",
     type = "method"
@@ -1848,47 +1028,11 @@ local api = {
   inherits = "Sprite",
   type = "class"
  },
- Microphone = {
-  childs = {
-   new = {
-    args = "(deviceName, sampleRate, numChannels, bitsPerSample)",
-    description = "Creates a new Microphone object.",
-    returns = "()",
-    type = "function",
-    valuetype = "Microphone"
-   },
-   setOutputFile = {
-    args = "(fileName)",
-    description = "Sets the output file",
-    returns = "()",
-    type = "method"
-   },
-   start = {
-    args = "()",
-    description = "Start recording with device.",
-    returns = "()",
-    type = "method"
-   },
-   stop = {
-    args = "()",
-    description = "Stop recording",
-    returns = "()",
-    type = "method"
-   }
-  },
-  type = "class"
- },
  MovieClip = {
   childs = {
    clearAction = {
     args = "(frame)",
     description = "Clears the action at the specified frame",
-    returns = "()",
-    type = "method"
-   },
-   getFrame = {
-    args = "(frame)",
-    description = "",
     returns = "()",
     type = "method"
    },
@@ -1908,8 +1052,7 @@ local api = {
     args = "(timeline)",
     description = "Creates a new MovieClip object",
     returns = "()",
-    type = "function",
-    valuetype = "MovieClip"
+    type = "function"
    },
    play = {
     args = "()",
@@ -1937,723 +1080,6 @@ local api = {
    }
   },
   inherits = "Sprite",
-  type = "class"
- },
- Notification = {
-  childs = {
-   DEFAULT_SOUND = {
-    description = "value \"default\"",
-    type = "value"
-   },
-   cancel = {
-    args = "()",
-    description = "Cancel notification",
-    returns = "()",
-    type = "method"
-   },
-   dispatchAfter = {
-    args = "()",
-    description = "Dispatch notification after specified time",
-    returns = "()",
-    type = "method"
-   },
-   dispatchNow = {
-    args = "()",
-    description = "Dispatch notification now",
-    returns = "()",
-    type = "method"
-   },
-   dispatchOn = {
-    args = "()",
-    description = "Dispatch on specified date",
-    returns = "()",
-    type = "method"
-   },
-   getId = {
-    args = "()",
-    description = "Get id of notification",
-    returns = "()",
-    type = "method"
-   },
-   getMessage = {
-    args = "()",
-    description = "Get message of notification",
-    returns = "()",
-    type = "method"
-   },
-   getNumber = {
-    args = "()",
-    description = "Get notification number",
-    returns = "()",
-    type = "method"
-   },
-   getSound = {
-    args = "()",
-    description = "Get sound of notification",
-    returns = "()",
-    type = "method"
-   },
-   getTitle = {
-    args = "()",
-    description = "Get title of notification",
-    returns = "()",
-    type = "method"
-   },
-   new = {
-    args = "()",
-    description = "Creates new notification",
-    returns = "()",
-    type = "function",
-    valuetype = "Notification"
-   },
-   setNumber = {
-    args = "()",
-    description = "Set notification number",
-    returns = "()",
-    type = "method"
-   },
-   setSound = {
-    args = "()",
-    description = "Set notification sound",
-    returns = "()",
-    type = "method"
-   },
-   setTitle = {
-    args = "()",
-    description = "Set the title of notification",
-    returns = "()",
-    type = "method"
-   }
-  },
-  type = "class"
- },
- NotificationManager = {
-  childs = {
-   cancelAllNotifications = {
-    args = "()",
-    description = "Cancel scheduled notification",
-    returns = "()",
-    type = "method"
-   },
-   cancelNotification = {
-    args = "()",
-    description = "Cancel specified notification",
-    returns = "()",
-    type = "method"
-   },
-   clearLocalNotifications = {
-    args = "()",
-    description = "Clear local notifications",
-    returns = "()",
-    type = "method"
-   },
-   clearPushNotifications = {
-    args = "()",
-    description = "Clear push notifications",
-    returns = "()",
-    type = "method"
-   },
-   getLocalNotifications = {
-    args = "()",
-    description = "Get local notifications",
-    returns = "()",
-    type = "method"
-   },
-   getPushNotifications = {
-    args = "()",
-    description = "Get push notification",
-    returns = "()",
-    type = "method"
-   },
-   getScheduledNotifications = {
-    args = "()",
-    description = "Get schedule notifications",
-    returns = "()",
-    type = "method"
-   },
-   getSharedInstance = {
-    args = "()",
-    description = "Get NotificationManager instance",
-    returns = "()",
-    type = "function"
-   },
-   registerForPushNotifications = {
-    args = "()",
-    description = "Register for push notifications",
-    returns = "()",
-    type = "method"
-   },
-   unregisterForPushNotifications = {
-    args = "()",
-    description = "Unregister from notifications",
-    returns = "()",
-    type = "method"
-   }
-  },
-  inherits = "EventDispatcher",
-  type = "class"
- },
- Object = {
-  childs = {
-   getBaseClass = {
-    args = "()",
-    description = "Returns base class",
-    returns = "()",
-    type = "method"
-   },
-   getClass = {
-    args = "()",
-    description = "Returns class name",
-    returns = "()",
-    type = "method"
-   },
-   isInstanceOf = {
-    args = "(classname)",
-    description = "Checks if instance belongs to class",
-    returns = "()",
-    type = "method"
-   }
-  },
-  type = "class"
- },
- Particles = {
-  childs = {
-   addParticles = {
-    args = "(particles)",
-    description = "Add particles",
-    returns = "()",
-    type = "method"
-   },
-   clearTexture = {
-    args = "()",
-    description = "Clear texture for all particles",
-    returns = "()",
-    type = "method"
-   },
-   getParticleAngle = {
-    args = "(i)",
-    description = "Get particle angle",
-    returns = "()",
-    type = "method"
-   },
-   getParticleColor = {
-    args = "(i)",
-    description = "Get color and alpha value of particle",
-    returns = "()",
-    type = "method"
-   },
-   getParticleDecay = {
-    args = "(i)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   getParticlePosition = {
-    args = "(i)",
-    description = "Get position of particle",
-    returns = "()",
-    type = "method"
-   },
-   getParticleSize = {
-    args = "(i)",
-    description = "Get size of particle in pixels",
-    returns = "()",
-    type = "method"
-   },
-   getParticleSpeed = {
-    args = "(i)",
-    description = "Get speed of particle",
-    returns = "()",
-    type = "method"
-   },
-   getParticleTag = {
-    args = "(i)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   getParticleTtl = {
-    args = "(i)",
-    description = "Get initial time to live of particle",
-    returns = "()",
-    type = "method"
-   },
-   getParticles = {
-    args = "([set, tag])",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   isPaused = {
-    args = "()",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   new = {
-    args = "()",
-    description = "Create new particles group",
-    returns = "()",
-    type = "function",
-    valuetype = "Particles"
-   },
-   removeParticles = {
-    args = "(particle indeces)",
-    description = "Remove particles by index in table or as arguments",
-    returns = "()",
-    type = "method"
-   },
-   setParticleAngle = {
-    args = "(i, angle)",
-    description = "Set angle of particle",
-    returns = "()",
-    type = "method"
-   },
-   setParticleColor = {
-    args = "(i, color [, alpha])",
-    description = "Set color of particles",
-    returns = "()",
-    type = "method"
-   },
-   setParticleDecay = {
-    args = "(i, decay, decayAlpha, decayGrowth, decayAngular)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setParticlePosition = {
-    args = "(i, x, y)",
-    description = "Set position of particle",
-    returns = "()",
-    type = "method"
-   },
-   setParticleSize = {
-    args = "(i, size)",
-    description = "Set size of particle",
-    returns = "()",
-    type = "method"
-   },
-   setParticleSpeed = {
-    args = "(i [, x, y, a, s])",
-    description = "Set speed of particles",
-    returns = "()",
-    type = "method"
-   },
-   setParticleTag = {
-    args = "(i, tag)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setParticleTtl = {
-    args = "(i, ttl)",
-    description = "Set time to live",
-    returns = "()",
-    type = "method"
-   },
-   setParticlesTag = {
-    args = "()",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setPaused = {
-    args = "(paused)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setTexture = {
-    args = "(texture)",
-    description = "Set texture to all particles",
-    returns = "()",
-    type = "method"
-   }
-  },
-  inherits = "Sprite",
-  type = "class"
- },
- Path2D = {
-  childs = {
-   new = {
-    args = "()",
-    description = "Creates Path2D object",
-    returns = "()",
-    type = "function",
-    valuetype = "Path2D"
-   },
-   setConvex = {
-    args = "(convex)",
-    description = "Flag the shape as convex.",
-    returns = "()",
-    type = "method"
-   },
-   setFillColor = {
-    args = "(color [, alpha])",
-    description = "Sets fill color",
-    returns = "()",
-    type = "method"
-   },
-   setFontPath = {
-    args = "(font, character)",
-    description = "Sets the path from the outline of a TTFont character",
-    returns = "()",
-    type = "method"
-   },
-   setLineColor = {
-    args = "(color [, alpha])",
-    description = "Sets line color",
-    returns = "()",
-    type = "method"
-   },
-   setLineThickness = {
-    args = "(thickness [, feather])",
-    description = "Set the thickness of the outline",
-    returns = "()",
-    type = "method"
-   },
-   setPath = {
-    args = "(commands, coordinates [, more coordinates])",
-    description = "Set path to draw",
-    returns = "()",
-    type = "method"
-   },
-   setSvgPath = {
-    args = "(svg_params)",
-    description = "Set path with svg properties",
-    returns = "()",
-    type = "method"
-   },
-   setTexture = {
-    args = "(texture [, matrix])",
-    description = "Sets texture for fill",
-    returns = "()",
-    type = "method"
-   }
-  },
-  inherits = "Sprite",
-  type = "class"
- },
- Pixel = {
-  childs = {
-   getColor = {
-    args = "()",
-    description = "Gets the color(s) of the Pixel",
-    returns = "()",
-    type = "method"
-   },
-   getDimensions = {
-    args = "()",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   getTexturePosition = {
-    args = "()",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   getTextureScale = {
-    args = "()",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   new = {
-    args = "([color, alpha, width, height])",
-    description = "Create new pixel",
-    returns = "()",
-    type = "function",
-    valuetype = "Pixel"
-   },
-   setColor = {
-    args = "([color, alpha])",
-    description = "Sets the color of the Pixel",
-    returns = "()",
-    type = "method"
-   },
-   setDimensions = {
-    args = "(w, h)",
-    description = "Sets both width and height of the Pixel.",
-    returns = "()",
-    type = "method"
-   },
-   setHeight = {
-    args = "(h)",
-    description = "Sets the height of the pixel sprite.",
-    returns = "()",
-    type = "method"
-   },
-   setTexture = {
-    args = "(texture [, slot, matrix])",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setTextureMatrix = {
-    args = "(matrix)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setTexturePosition = {
-    args = "(x, y)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setTextureScale = {
-    args = "(sx, sy)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setWidth = {
-    args = "(w)",
-    description = "Sets the width of the pixel sprite.",
-    returns = "()",
-    type = "method"
-   }
-  },
-  inherits = "Sprite",
-  type = "class"
- },
- RenderTarget = {
-  childs = {
-   clear = {
-    args = "(color, alpha [, x, y, width, height])",
-    description = "Clears rendered texture",
-    returns = "()",
-    type = "method"
-   },
-   draw = {
-    args = "(sprite [, x, y])",
-    description = "Renders provided object",
-    returns = "()",
-    type = "method"
-   },
-   getPixel = {
-    args = "(x, y)",
-    description = "Returns single pixels color and alpha channel",
-    returns = "()",
-    type = "method"
-   },
-   getPixels = {
-    args = "(x, y, w, h)",
-    description = "Returns buffer containing color and alpha data from provided rectangle",
-    returns = "()",
-    type = "method"
-   },
-   new = {
-    args = "(width, height, filtering, repeat, autoscale)",
-    description = "Creates new RenderTarget object",
-    returns = "()",
-    type = "function",
-    valuetype = "RenderTarget"
-   },
-   save = {
-    args = "(filename [, x, y, width, height])",
-    description = "Save contents of RenderTarget as image",
-    returns = "()",
-    type = "method"
-   }
-  },
-  inherits = "TextureBase",
-  type = "class"
- },
- Screen = {
-  childs = {
-   clear = {
-    args = "(color, alpha)",
-    description = "Sets the background color of this screen",
-    returns = "()",
-    type = "method"
-   },
-   getId = {
-    args = "()",
-    description = "Returns the screen's id",
-    returns = "()",
-    type = "method"
-   },
-   getMaxSize = {
-    args = "()",
-    description = "Returns the maximum size this screen can have",
-    returns = "()",
-    type = "method"
-   },
-   getPosition = {
-    args = "()",
-    description = "Returns the position of this screen",
-    returns = "()",
-    type = "method"
-   },
-   getSize = {
-    args = "()",
-    description = "Returns the size of this screen",
-    returns = "()",
-    type = "method"
-   },
-   getState = {
-    args = "()",
-    description = "Returns the state of this screen",
-    returns = "()",
-    type = "method"
-   },
-   new = {
-    args = "(id)",
-    description = "Open a new screen",
-    returns = "()",
-    type = "function",
-    valuetype = "Screen"
-   },
-   setContent = {
-    args = "(content)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setPosition = {
-    args = "(x, y)",
-    description = "Sets the position of this screen, if possible.",
-    returns = "()",
-    type = "method"
-   },
-   setSize = {
-    args = "(w, h)",
-    description = "Sets the size of this screen, if possible.",
-    returns = "()",
-    type = "method"
-   },
-   setState = {
-    args = "(state)",
-    description = "Sets the state of this screen, if possible.",
-    returns = "()",
-    type = "method"
-   }
-  },
-  inherits = "Sprite",
-  type = "class"
- },
- Shader = {
-  childs = {
-   CFLOAT = {
-    description = "value 1",
-    type = "value"
-   },
-   CFLOAT4 = {
-    description = "value 2",
-    type = "value"
-   },
-   CINT = {
-    description = "value 0",
-    type = "value"
-   },
-   CMATRIX = {
-    description = "value 3",
-    type = "value"
-   },
-   CTEXTURE = {
-    description = "value 4",
-    type = "value"
-   },
-   DBYTE = {
-    description = "value 0",
-    type = "value"
-   },
-   DFLOAT = {
-    description = "value 5",
-    type = "value"
-   },
-   DINT = {
-    description = "value 4",
-    type = "value"
-   },
-   DSHORT = {
-    description = "value 2",
-    type = "value"
-   },
-   DUBYTE = {
-    description = "value 1",
-    type = "value"
-   },
-   DUSHORT = {
-    description = "value 3",
-    type = "value"
-   },
-   FLAG_FROM_CODE = {
-    description = "value 4",
-    type = "value"
-   },
-   FLAG_NONE = {
-    description = "value 0",
-    type = "value"
-   },
-   FLAG_NO_DEFAULT_HEADER = {
-    description = "value 1",
-    type = "value"
-   },
-   SYS_COLOR = {
-    description = "value 2",
-    type = "value"
-   },
-   SYS_NONE = {
-    description = "value 0",
-    type = "value"
-   },
-   SYS_PARTICLESIZE = {
-    description = "value 6",
-    type = "value"
-   },
-   SYS_TEXTUREINFO = {
-    description = "value 5",
-    type = "value"
-   },
-   SYS_WIT = {
-    description = "value 3",
-    type = "value"
-   },
-   SYS_WORLD = {
-    description = "value 4",
-    type = "value"
-   },
-   SYS_WVP = {
-    description = "value 1",
-    type = "value"
-   },
-   getEngineVersion = {
-    args = "()",
-    description = "Get shader version",
-    returns = "()",
-    type = "method"
-   },
-   getProperties = {
-    args = "()",
-    description = "Get graphics engine properties",
-    returns = "()",
-    type = "method"
-   },
-   getShaderLanguage = {
-    args = "()",
-    description = "Get shader language",
-    returns = "()",
-    type = "method"
-   },
-   new = {
-    args = "(vertex shader, fragment shader, flags, uniform descriptor, attribute descriptor)",
-    description = "Create new shader",
-    returns = "()",
-    type = "function",
-    valuetype = "Shader"
-   },
-   setConstant = {
-    args = "(uniform name, data type, mult, data)",
-    description = "Change the value of a uniform",
-    returns = "()",
-    type = "method"
-   }
-  },
-  inherits = "Object",
   type = "class"
  },
  Shape = {
@@ -2718,8 +1144,7 @@ local api = {
     args = "()",
     description = "Creates a new Shape object",
     returns = "()",
-    type = "function",
-    valuetype = "Shape"
+    type = "function"
    },
    setFillStyle = {
     args = "(type, ...)",
@@ -2749,23 +1174,15 @@ local api = {
     args = "(filename)",
     description = "Creates a new Sound object",
     returns = "()",
-    type = "function",
-    valuetype = "Sound"
+    type = "function"
    },
    play = {
     args = "(startTime, looping, paused)",
     description = "Creates a new SoundChannel object to play the sound",
     returns = "()",
     type = "method"
-   },
-   setListenerPosition = {
-    args = "(x, y [, z, vx, vy, vz, dx, dy, dz, ux, uy, uz])",
-    description = "",
-    returns = "()",
-    type = "function"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  SoundChannel = {
@@ -2836,12 +1253,6 @@ local api = {
     returns = "()",
     type = "method"
    },
-   setWorldPosition = {
-    args = "(x, y [, z, vx, vy, vz])",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
    stop = {
     args = "()",
     description = "Stops the sound playing in the channel",
@@ -2849,7 +1260,6 @@ local api = {
     type = "method"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  Sprite = {
@@ -2910,12 +1320,6 @@ local api = {
     returns = "()",
     type = "method"
    },
-   getAnchorPosition = {
-    args = "()",
-    description = "Returns anchor position of Sprite",
-    returns = "()",
-    type = "method"
-   },
    getBounds = {
     args = "(targetSprite)",
     description = "Returns the bounds as it appears in another sprite's coordinate system",
@@ -2934,12 +1338,6 @@ local api = {
     returns = "()",
     type = "method"
    },
-   getClip = {
-    args = "()",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
    getColorTransform = {
     args = "()",
     description = "Returns the red, green, blue and alpha channel multipliers",
@@ -2947,7 +1345,7 @@ local api = {
     type = "method"
    },
    getHeight = {
-    args = "([withoutTransform])",
+    args = "()",
     description = "Returns the height",
     returns = "()",
     type = "method"
@@ -2972,7 +1370,7 @@ local api = {
    },
    getPosition = {
     args = "()",
-    description = "Gets the x,y and z coordinates of the sprite",
+    description = "Gets the x,y coordinates of the sprite",
     returns = "()",
     type = "method"
    },
@@ -2982,21 +1380,9 @@ local api = {
     returns = "()",
     type = "method"
    },
-   getRotationX = {
-    args = "()",
-    description = "Returns the rotation of the sprite around x axis in degrees",
-    returns = "()",
-    type = "method"
-   },
-   getRotationY = {
-    args = "()",
-    description = "Returns the rotation of the sprite around y axis in degrees",
-    returns = "()",
-    type = "method"
-   },
    getScale = {
     args = "()",
-    description = "Returns the horizontal, vertical and z scales of the sprite",
+    description = "Returns the horizontal and vertical scales of the sprite",
     returns = "()",
     type = "method"
    },
@@ -3012,32 +1398,8 @@ local api = {
     returns = "()",
     type = "method"
    },
-   getScaleZ = {
-    args = "()",
-    description = "Returns the scale on z axis of the sprite",
-    returns = "()",
-    type = "method"
-   },
-   getSkew = {
-    args = "()",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   getSkewX = {
-    args = "()",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   getSkewY = {
-    args = "()",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
    getWidth = {
-    args = "([withoutTransform])",
+    args = "()",
     description = "Returns the width",
     returns = "()",
     type = "method"
@@ -3054,12 +1416,6 @@ local api = {
     returns = "()",
     type = "method"
    },
-   getZ = {
-    args = "()",
-    description = "Returns the z coordinate of the sprite",
-    returns = "()",
-    type = "method"
-   },
    globalToLocal = {
     args = "(x, y)",
     description = "Converts the x,y coordinates from the global to the sprite's (local) coordinates",
@@ -3067,7 +1423,7 @@ local api = {
     type = "method"
    },
    hitTestPoint = {
-    args = "(x, y [, shapeFlag])",
+    args = "(x, y)",
     description = "Checks the given coordinates is in bounds of the sprite",
     returns = "()",
     type = "method"
@@ -3088,8 +1444,7 @@ local api = {
     args = "()",
     description = "Creates a new Sprite object",
     returns = "()",
-    type = "function",
-    valuetype = "Sprite"
+    type = "function"
    },
    removeChild = {
     args = "(child)",
@@ -3121,21 +1476,9 @@ local api = {
     returns = "()",
     type = "method"
    },
-   setAnchorPosition = {
-    args = "(anchorX, anchorY [, anchorZ])",
-    description = "Set anchor position",
-    returns = "()",
-    type = "method"
-   },
    setBlendMode = {
-    args = "(blendMode or src [, dst])",
+    args = "(blendMode)",
     description = "Sets the blend mode of the sprite",
-    returns = "()",
-    type = "method"
-   },
-   setClip = {
-    args = "(x, y, width, height)",
-    description = "Clip Sprite contents",
     returns = "()",
     type = "method"
    },
@@ -3152,8 +1495,8 @@ local api = {
     type = "method"
    },
    setPosition = {
-    args = "(x, y [, z])",
-    description = "Sets the x,y and z coordinates of the sprite",
+    args = "(x, y)",
+    description = "Sets the x,y coordinates of the sprite",
     returns = "()",
     type = "method"
    },
@@ -3163,21 +1506,9 @@ local api = {
     returns = "()",
     type = "method"
    },
-   setRotationX = {
-    args = "()",
-    description = "Sets the rotation of the sprite in degrees around x axis",
-    returns = "()",
-    type = "method"
-   },
-   setRotationY = {
-    args = "()",
-    description = "Sets the rotation of the sprite in degrees around y axis",
-    returns = "()",
-    type = "method"
-   },
    setScale = {
-    args = "(scaleX, scaleY, scaleZ)",
-    description = "Sets the horizontal, vertical and z axis scales of the sprite",
+    args = "(scaleX, scaleY)",
+    description = "Sets the horizontal and vertical scales of the sprite",
     returns = "()",
     type = "method"
    },
@@ -3190,48 +1521,6 @@ local api = {
    setScaleY = {
     args = "(scaleY)",
     description = "Sets the vertical scale of the sprite",
-    returns = "()",
-    type = "method"
-   },
-   setScaleZ = {
-    args = "(scale)",
-    description = "Set scale on z axis",
-    returns = "()",
-    type = "method"
-   },
-   setShader = {
-    args = "(shader)",
-    description = "Set shader for this sprite",
-    returns = "()",
-    type = "method"
-   },
-   setShaderConstant = {
-    args = "(uniform name, data type, mult, data)",
-    description = "Change the value of a uniform for this sprite",
-    returns = "()",
-    type = "method"
-   },
-   setSkew = {
-    args = "(kx, ky)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setSkewX = {
-    args = "(kx)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setSkewY = {
-    args = "(ky)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setStencilOperation = {
-    args = "(op)",
-    description = "Set the stencil operation for this sprite",
     returns = "()",
     type = "method"
    },
@@ -3250,24 +1539,6 @@ local api = {
    setY = {
     args = "(y)",
     description = "Sets the y coordinate of the sprite",
-    returns = "()",
-    type = "method"
-   },
-   setZ = {
-    args = "(z)",
-    description = "Sets the z coordinate of the sprite",
-    returns = "()",
-    type = "method"
-   },
-   swapChildren = {
-    args = "(child1, child2)",
-    description = "Swap two children index places",
-    returns = "()",
-    type = "method"
-   },
-   swapChildrenAt = {
-    args = "(index1, index2)",
-    description = "Swaps two child sprites.",
     returns = "()",
     type = "method"
    }
@@ -3339,8 +1610,7 @@ local api = {
     args = "(filename, size, text, filtering)",
     description = "Creates a new TTFont object",
     returns = "()",
-    type = "function",
-    valuetype = "TTFont"
+    type = "function"
    }
   },
   inherits = "FontBase",
@@ -3348,27 +1618,9 @@ local api = {
  },
  TextField = {
   childs = {
-   getLayout = {
-    args = "()",
-    description = "Retrieve the layout parameters of this Textfield",
-    returns = "()",
-    type = "method"
-   },
    getLetterSpacing = {
     args = "()",
     description = "Returns the letter-spacing property which is used to increase or decrease the space between characters in a text",
-    returns = "()",
-    type = "method"
-   },
-   getLineHeight = {
-    args = "()",
-    description = "Get line height",
-    returns = "()",
-    type = "method"
-   },
-   getSample = {
-    args = "()",
-    description = "Get string that was used as sample for determining line height",
     returns = "()",
     type = "method"
    },
@@ -3385,33 +1637,14 @@ local api = {
     type = "method"
    },
    new = {
-    args = "(font, text [, sample, layout])",
+    args = "(font, text)",
     description = "Creates a new TextField object with the specified font and text",
     returns = "()",
-    type = "function",
-    valuetype = "TextField"
-   },
-   setFont = {
-    args = "(font)",
-    description = "Set font to use",
-    returns = "()",
-    type = "method"
-   },
-   setLayout = {
-    args = "(layout)",
-    description = "Change the layout parameters for this TextField",
-    returns = "()",
-    type = "method"
+    type = "function"
    },
    setLetterSpacing = {
     args = "(spacing)",
     description = "Sets the letter-spacing property which is used to increase or decrease the space between characters in a text",
-    returns = "()",
-    type = "method"
-   },
-   setSample = {
-    args = "(sample)",
-    description = "Set string that will be used as sample for determining text's line height",
     returns = "()",
     type = "method"
    },
@@ -3475,8 +1708,7 @@ local api = {
     args = "(title, message, text, cancelButton, button1, button2)",
     description = "",
     returns = "()",
-    type = "function",
-    valuetype = "TextInputDialog"
+    type = "function"
    },
    setInputType = {
     args = "(type)",
@@ -3497,17 +1729,15 @@ local api = {
     type = "method"
    }
   },
-  inherits = "AlertDialog",
   type = "class"
  },
  Texture = {
   childs = {
    new = {
-    args = "(filename, filtering [, options])",
+    args = "(filename, filtering, options)",
     description = "Creates a new Texture object",
     returns = "()",
-    type = "function",
-    valuetype = "Texture"
+    type = "function"
    }
   },
   inherits = "TextureBase",
@@ -3523,26 +1753,6 @@ local api = {
     description = "value \"repeat\"",
     type = "value"
    },
-   RGB565 = {
-    description = "value \"rgb565\"",
-    type = "value"
-   },
-   RGB888 = {
-    description = "value \"rgb888\"",
-    type = "value"
-   },
-   RGBA4444 = {
-    description = "value \"rgba4444\"",
-    type = "value"
-   },
-   RGBA5551 = {
-    description = "value \"rgba5551\"",
-    type = "value"
-   },
-   RGBA8888 = {
-    description = "value \"rgba8888\"",
-    type = "value"
-   },
    getHeight = {
     args = "()",
     description = "Returns the height of the texture in pixels",
@@ -3556,7 +1766,6 @@ local api = {
     type = "method"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  TexturePack = {
@@ -3571,8 +1780,7 @@ local api = {
     args = "(txtfile, imagefile, filtering, options)",
     description = "",
     returns = "()",
-    type = "function",
-    valuetype = "TexturePack"
+    type = "function"
    }
   },
   inherits = "TextureBase",
@@ -3590,8 +1798,7 @@ local api = {
     args = "(texture, x, y, width, height)",
     description = "",
     returns = "()",
-    type = "function",
-    valuetype = "TextureRegion"
+    type = "function"
    },
    setRegion = {
     args = "(x, y, width, height)",
@@ -3600,21 +1807,20 @@ local api = {
     type = "method"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  TileMap = {
   childs = {
    FLIP_DIAGONAL = {
-    description = "value 1",
+    description = "value \"1\"",
     type = "value"
    },
    FLIP_HORIZONTAL = {
-    description = "value 4",
+    description = "value \"4\"",
     type = "value"
    },
    FLIP_VERTICAL = {
-    description = "value 2",
+    description = "value \"2\"",
     type = "value"
    },
    clearTile = {
@@ -3633,23 +1839,10 @@ local api = {
     args = "(width, height, texture, tilewidth, tileheight, spacingx, spacingy, marginx, marginy, displaywidth, displayheight)",
     description = "Creates a new TileMap instance",
     returns = "()",
-    type = "function",
-    valuetype = "TileMap"
-   },
-   setRepeat = {
-    args = "(x, y)",
-    description = "Indicate if the tilemap should repeat itself",
-    returns = "()",
-    type = "method"
-   },
-   setTexture = {
-    args = "(texture, tilewidth, tileheight, spacingx, spacingy, marginx, marginy)",
-    description = "Change the tile texture/atlas used by the tilemap",
-    returns = "()",
-    type = "method"
+    type = "function"
    },
    setTile = {
-    args = "(x, y, tx, ty, flip [, color, alpha])",
+    args = "(x, y, tx, ty, flip)",
     description = "Sets the index of the tile",
     returns = "()",
     type = "method"
@@ -3700,8 +1893,7 @@ local api = {
     args = "(delay, repeatCount)",
     description = "Creates a new Timer object",
     returns = "()",
-    type = "function",
-    valuetype = "Timer"
+    type = "function"
    },
    pauseAll = {
     args = "()",
@@ -3752,7 +1944,6 @@ local api = {
     type = "function"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  UrlLoader = {
@@ -3779,12 +1970,6 @@ local api = {
     returns = "()",
     type = "method"
    },
-   ignoreSslErrors = {
-    args = "()",
-    description = "Ignores SSL certificate related errors",
-    returns = "()",
-    type = "method"
-   },
    load = {
     args = "(url, method, headers, body)",
     description = "Loads data from the specified URL",
@@ -3795,63 +1980,13 @@ local api = {
     args = "(url, method, headers, body)",
     description = "Creates a new UrlLoader object",
     returns = "()",
-    type = "function",
-    valuetype = "UrlLoader"
+    type = "function"
    }
   },
-  inherits = "Object",
-  type = "class"
- },
- Viewport = {
-  childs = {
-   lookAngles = {
-    args = "(eyex, eyey, eyez, pitch, yaw, roll)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   lookAt = {
-    args = "(eyex, eyey, eyez, targetx, targety, targetz, upx, upy, upz)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setContent = {
-    args = "(content)",
-    description = "",
-    returns = "()",
-    type = "method"
-   },
-   setProjection = {
-    args = "(matrix)",
-    description = "Specify a projection matrix to use when displaying the content. ",
-    returns = "()",
-    type = "method"
-   },
-   setTransform = {
-    args = "(transform)",
-    description = "",
-    returns = "()",
-    type = "method"
-   }
-  },
-  inherits = "Sprite",
   type = "class"
  },
  application = {
   childs = {
-   canOpenUrl = {
-    args = "(url)",
-    description = "Tests if it is possible to open provided url",
-    returns = "()",
-    type = "method"
-   },
-   configureFrustum = {
-    args = "(fov [, farplane])",
-    description = "Configure the projection for 3D perspective.",
-    returns = "()",
-    type = "method"
-   },
    exit = {
     args = "()",
     description = "Terminates the application",
@@ -3861,12 +1996,6 @@ local api = {
    getApiVersion = {
     args = "()",
     description = "Returns the API version",
-    returns = "()",
-    type = "method"
-   },
-   getAppId = {
-    args = "()",
-    description = "Returns the app id or bundle id",
     returns = "()",
     type = "method"
    },
@@ -3900,18 +2029,6 @@ local api = {
     returns = "()",
     type = "method"
    },
-   getDeviceOrientation = {
-    args = "()",
-    description = "Get the device orientation",
-    returns = "()",
-    type = "method"
-   },
-   getDeviceSafeArea = {
-    args = "([logical])",
-    description = "Returns the safe display area bounds",
-    returns = "()",
-    type = "method"
-   },
    getDeviceWidth = {
     args = "()",
     description = "Returns the physical width of the device in pixels",
@@ -3933,12 +2050,6 @@ local api = {
    getLocale = {
     args = "()",
     description = "Returns the device locale",
-    returns = "()",
-    type = "method"
-   },
-   getLogicalBounds = {
-    args = "()",
-    description = "Returns the physical screen bounds in logical space",
     returns = "()",
     type = "method"
    },
@@ -4002,14 +2113,8 @@ local api = {
     returns = "()",
     type = "method"
    },
-   isPlayerMode = {
-    args = "()",
-    description = "Check if app runs on player",
-    returns = "()",
-    type = "method"
-   },
    openUrl = {
-    args = "(url)",
+    args = "()",
     description = "Opens the given URL in the appropriate application",
     returns = "()",
     type = "method"
@@ -4026,21 +2131,9 @@ local api = {
     returns = "()",
     type = "method"
    },
-   setFullScreen = {
-    args = "(fullscreen)",
-    description = "Full screen or window mode",
-    returns = "()",
-    type = "method"
-   },
    setKeepAwake = {
     args = "(keepAwake)",
     description = "Enables/disables screen dimming and device sleeping",
-    returns = "()",
-    type = "method"
-   },
-   setKeyboardVisibility = {
-    args = "(visible)",
-    description = "",
     returns = "()",
     type = "method"
    },
@@ -4062,20 +2155,13 @@ local api = {
     returns = "()",
     type = "method"
    },
-   setWindowSize = {
-    args = "(width, height)",
-    description = "Sets desktop window to a specific size",
-    returns = "()",
-    type = "method"
-   },
    vibrate = {
-    args = "([ms])",
+    args = "()",
     description = "Vibrates the device",
     returns = "()",
     type = "method"
    }
   },
-  inherits = "Object",
   type = "class"
  },
  b2 = {
@@ -4331,8 +2417,7 @@ local api = {
       args = "()",
       description = "",
       returns = "()",
-      type = "function",
-      valuetype = "ChainShape"
+      type = "function"
      }
     },
     inherits = "b2.Shape",
@@ -4344,8 +2429,7 @@ local api = {
       args = "(centerx, centery, radius)",
       description = "",
       returns = "()",
-      type = "function",
-      valuetype = "CircleShape"
+      type = "function"
      },
      set = {
       args = "(centerx, centery, radius)",
@@ -4447,33 +2531,33 @@ local api = {
     type = "class"
    },
    DISTANCE_JOINT = {
-    description = "value 3",
+    description = "value \"3\"",
     type = "value"
    },
    DYNAMIC_BODY = {
-    description = "value 2",
+    description = "value \"2\"",
     type = "value"
    },
    DebugDraw = {
     childs = {
      AABB_BIT = {
-      description = "value 4",
+      description = "value \"4\"",
       type = "value"
      },
      CENTER_OF_MASS_BIT = {
-      description = "value 16",
+      description = "value \"16\"",
       type = "value"
      },
      JOINT_BIT = {
-      description = "value 2",
+      description = "value \"2\"",
       type = "value"
      },
      PAIR_BIT = {
-      description = "value 8",
+      description = "value \"8\"",
       type = "value"
      },
      SHAPE_BIT = {
-      description = "value 1",
+      description = "value \"1\"",
       type = "value"
      },
      appendFlags = {
@@ -4498,8 +2582,7 @@ local api = {
       args = "()",
       description = "",
       returns = "()",
-      type = "function",
-      valuetype = "DebugDraw"
+      type = "function"
      },
      setFlags = {
       args = "(flags)",
@@ -4559,8 +2642,7 @@ local api = {
       args = "(v1x, v1y, v2x, v2y)",
       description = "",
       returns = "()",
-      type = "function",
-      valuetype = "EdgeShape"
+      type = "function"
      },
      set = {
       args = "(v1x, v1y, v2x, v2y)",
@@ -4573,7 +2655,7 @@ local api = {
     type = "class"
    },
    FRICTION_JOINT = {
-    description = "value 9",
+    description = "value \"9\"",
     type = "value"
    },
    Fixture = {
@@ -4642,7 +2724,7 @@ local api = {
     type = "class"
    },
    GEAR_JOINT = {
-    description = "value 6",
+    description = "value \"6\"",
     type = "value"
    },
    GearJoint = {
@@ -4717,29 +2799,12 @@ local api = {
     type = "class"
    },
    KINEMATIC_BODY = {
-    description = "value 1",
+    description = "value \"1\"",
     type = "value"
    },
    MOUSE_JOINT = {
-    description = "value 5",
+    description = "value \"5\"",
     type = "value"
-   },
-   Manifold = {
-    childs = {
-     localNormal = {
-      description = "value \"table\"",
-      type = "value"
-     },
-     localPoint = {
-      description = "value \"table\"",
-      type = "value"
-     },
-     points = {
-      description = "value \"table\"",
-      type = "value"
-     }
-    },
-    type = "class"
    },
    MouseJoint = {
     childs = {
@@ -4796,101 +2861,12 @@ local api = {
     type = "class"
    },
    PRISMATIC_JOINT = {
-    description = "value 2",
+    description = "value \"2\"",
     type = "value"
    },
    PULLEY_JOINT = {
-    description = "value 4",
+    description = "value \"4\"",
     type = "value"
-   },
-   ParticleSystem = {
-    childs = {
-     FLAG_COLOR_MIXING = {
-      description = "value 256",
-      type = "value"
-     },
-     FLAG_ELASTIC = {
-      description = "value 16",
-      type = "value"
-     },
-     FLAG_POWDER = {
-      description = "value 64",
-      type = "value"
-     },
-     FLAG_SPRING = {
-      description = "value 8",
-      type = "value"
-     },
-     FLAG_TENSILE = {
-      description = "value 128",
-      type = "value"
-     },
-     FLAG_VISCOUS = {
-      description = "value 32",
-      type = "value"
-     },
-     FLAG_WALL = {
-      description = "value 4",
-      type = "value"
-     },
-     FLAG_WATER = {
-      description = "value 0",
-      type = "value"
-     },
-     FLAG_ZOMBIE = {
-      description = "value 2",
-      type = "value"
-     },
-     containsParticle = {
-      args = "(id)",
-      description = "",
-      returns = "()",
-      type = "method"
-     },
-     createParticle = {
-      args = "(particleDef)",
-      description = "Create new particle",
-      returns = "()",
-      type = "method"
-     },
-     createParticleGroup = {
-      args = "(particleGoupDef)",
-      description = "Create group of particles",
-      returns = "()",
-      type = "method"
-     },
-     destroyParticle = {
-      args = "(id)",
-      description = "Destroy particle by id",
-      returns = "()",
-      type = "method"
-     },
-     destroyParticles = {
-      args = "(ids)",
-      description = "",
-      returns = "()",
-      type = "method"
-     },
-     getParticleCount = {
-      args = "()",
-      description = "",
-      returns = "()",
-      type = "method"
-     },
-     getParticleGroupList = {
-      args = "()",
-      description = "",
-      returns = "()",
-      type = "method"
-     },
-     setTexture = {
-      args = "(texture)",
-      description = "Set texture to particles",
-      returns = "()",
-      type = "method"
-     }
-    },
-    type = "class"
    },
    PolygonShape = {
     childs = {
@@ -4898,8 +2874,7 @@ local api = {
       args = "()",
       description = "",
       returns = "()",
-      type = "function",
-      valuetype = "PolygonShape"
+      type = "function"
      },
      set = {
       args = "(vertices)",
@@ -5032,11 +3007,11 @@ local api = {
     type = "class"
    },
    REVOLUTE_JOINT = {
-    description = "value 1",
+    description = "value \"1\"",
     type = "value"
    },
    ROPE_JOINT = {
-    description = "value 10",
+    description = "value \"10\"",
     type = "value"
    },
    RevoluteJoint = {
@@ -5136,15 +3111,15 @@ local api = {
     type = "class"
    },
    STATIC_BODY = {
-    description = "value 0",
+    description = "value \"0\"",
     type = "value"
    },
    WELD_JOINT = {
-    description = "value 8",
+    description = "value \"8\"",
     type = "value"
    },
    WHEEL_JOINT = {
-    description = "value 7",
+    description = "value \"7\"",
     type = "value"
    },
    WeldJoint = {
@@ -5275,12 +3250,6 @@ local api = {
       returns = "()",
       type = "method"
      },
-     createParticleSystem = {
-      args = "(particleSysDef)",
-      description = "Create particle system",
-      returns = "()",
-      type = "method"
-     },
      destroyBody = {
       args = "(body)",
       description = "Destroys a rigid body",
@@ -5303,11 +3272,10 @@ local api = {
       args = "(gravityx, gravityy, doSleep)",
       description = "",
       returns = "()",
-      type = "function",
-      valuetype = "World"
+      type = "function"
      },
      queryAABB = {
-      args = "(minx, miny, maxx, maxy)",
+      args = "(lowerx, lowery, upperx, uppery)",
       description = "Query the world for all fixtures that potentially overlap the provided AABB",
       returns = "()",
       type = "method"
@@ -5338,19 +3306,6 @@ local api = {
      }
     },
     inherits = "EventDispatcher",
-    type = "class"
-   },
-   WorldManifold = {
-    childs = {
-     normal = {
-      description = "value \"table\"",
-      type = "value"
-     },
-     points = {
-      description = "value \"table\"",
-      type = "value"
-     }
-    },
     type = "class"
    },
    createDistanceJointDef = {
@@ -5428,29 +3383,6 @@ local api = {
   },
   type = "class"
  },
- camera = {
-  childs = {
-   availableDevices = {
-    args = "()",
-    description = "Return a list of available devices.",
-    returns = "()",
-    type = "function"
-   },
-   start = {
-    args = "(texture [, device])",
-    description = "Start streaming camera pictures to a Texture",
-    returns = "()",
-    type = "function"
-   },
-   stop = {
-    args = "()",
-    description = "Stop camera streaming.",
-    returns = "()",
-    type = "function"
-   }
-  },
-  type = "class"
- },
  flurry = {
   childs = {
    endTimedEvent = {
@@ -5516,8 +3448,7 @@ local api = {
       args = "(alignment, orientation)",
       description = "",
       returns = "()",
-      type = "function",
-      valuetype = "Banner"
+      type = "function"
      },
      setAlignment = {
       args = "(alignment)",
@@ -5544,249 +3475,16 @@ local api = {
   },
   type = "class"
  },
- int64 = {
-  childs = {
-   new = {
-    args = "(value)",
-    description = "Create 64 bit integer",
-    returns = "()",
-    type = "function",
-    valuetype = "int64"
-   }
-  },
-  type = "class"
- },
- json = {
-  childs = {
-   decode = {
-    args = "(jsondata)",
-    description = "Returns Lua table from provided json encoded string",
-    returns = "()",
-    type = "function"
-   },
-   encode = {
-    args = "(data)",
-    description = "Returns encoded json string from provided Lua table",
-    returns = "()",
-    type = "function"
-   }
-  },
-  type = "class"
- },
  stage = {
-  childs = {
-   setClearColorBuffer = {
-    args = "(state)",
-    description = "Enable/disable draw call for background color",
-    returns = "()",
-    type = "method"
-   }
-  },
+  childs = {},
   inherits = "Sprite",
-  type = "class"
- },
- utf8 = {
-  childs = {
-   byte = {
-    args = "(s [, i, j])",
-    description = "Returns the internal numerical codes of the characters",
-    returns = "()",
-    type = "function"
-   },
-   char = {
-    args = "(code1 [, code2, codeN])",
-    description = "Returns a string from integers as characters",
-    returns = "()",
-    type = "function"
-   },
-   charpattern = {
-    description = "value \"[\\0-\\x7F\\xC2-\\xF4][\\x80-\\xBF]*\"",
-    type = "value"
-   },
-   charpos = {
-    args = "(s [, charpos, offset])",
-    description = "Convert UTF-8 position to byte offset",
-    returns = "()",
-    type = "function"
-   },
-   codepoint = {
-    args = "(s [, i, j])",
-    description = "Returns the codepoints (as integers) from all characters",
-    returns = "()",
-    type = "function"
-   },
-   codes = {
-    args = "(s)",
-    description = "Returns values so that the construction",
-    returns = "()",
-    type = "function"
-   },
-   escape = {
-    args = "(s)",
-    description = "Escape a str to UTF-8 format string",
-    returns = "()",
-    type = "function"
-   },
-   find = {
-    args = "(s, pattern [, init, plain])",
-    description = "Looks for the first match of pattern in the string s",
-    returns = "()",
-    type = "function"
-   },
-   fold = {
-    args = "(s)",
-    description = "Convert UTF-8 string s to folded case used to compare by ignore case",
-    returns = "()",
-    type = "function"
-   },
-   gmatch = {
-    args = "(s, pattern)",
-    description = "Returns an iterator function",
-    returns = "()",
-    type = "function"
-   },
-   gsub = {
-    args = "(s, pattern, repl [, n])",
-    description = "Returns a copy of s in which all (or the first n, if given) occurrences of the pattern have been replaced",
-    returns = "()",
-    type = "function"
-   },
-   insert = {
-    args = "(s [, idx, substring])",
-    description = "Insert a substring to s",
-    returns = "()",
-    type = "function"
-   },
-   len = {
-    args = "(s [, i, j])",
-    description = "Returns the number of UTF-8 characters in string",
-    returns = "()",
-    type = "function"
-   },
-   lower = {
-    args = "(s)",
-    description = "Receives a string and returns a copy of this string with all uppercase letters changed to lowercase",
-    returns = "()",
-    type = "function"
-   },
-   match = {
-    args = "(s, pattern [, init])",
-    description = "Looks for the first match of pattern in the string s",
-    returns = "()",
-    type = "function"
-   },
-   ncasecmp = {
-    args = "(a, b)",
-    description = "Compare a and b without case",
-    returns = "()",
-    type = "function"
-   },
-   next = {
-    args = "(s [, charpos, offset])",
-    description = "Iterate though the UTF-8 string s",
-    returns = "()",
-    type = "function"
-   },
-   offset = {
-    args = "(s, n [, i])",
-    description = "Returns the position (in bytes) where the encoding of the n-th character of s",
-    returns = "()",
-    type = "function"
-   },
-   remove = {
-    args = "(s [, start, stop])",
-    description = "Delete a substring in s",
-    returns = "()",
-    type = "function"
-   },
-   reverse = {
-    args = "(s)",
-    description = "Returns a string that is the string s reversed.",
-    returns = "()",
-    type = "function"
-   },
-   sub = {
-    args = "(s, i [, j])",
-    description = "Returns the substring of s that starts at i and continues until j",
-    returns = "()",
-    type = "function"
-   },
-   title = {
-    args = "(s)",
-    description = "Convert UTF-8 string s to title case used to compare by ignore case",
-    returns = "()",
-    type = "function"
-   },
-   upper = {
-    args = "(s)",
-    description = "Receives a string and returns a copy of this string with all lowercase letters changed to uppercase. ",
-    returns = "()",
-    type = "function"
-   },
-   width = {
-    args = "(s [, ambi_is_double, default_width])",
-    description = "Calculate the width of UTF-8 string s",
-    returns = "()",
-    type = "function"
-   },
-   widthindex = {
-    args = "(s, location [, ambi_is_double, default_width])",
-    description = "Return the character index at given location in string s.",
-    returns = "()",
-    type = "function"
-   }
-  },
-  type = "class"
- },
- zlib = {
-  childs = {
-   adler32 = {
-    args = "([adler32, buffer])",
-    description = "Update the adler32 value",
-    returns = "()",
-    type = "function"
-   },
-   compress = {
-    args = "(buffer [, level, method, windowBits, memLevel, strategy])",
-    description = "Return compressed string",
-    returns = "()",
-    type = "function"
-   },
-   crc32 = {
-    args = "([crc32, buffer])",
-    description = "Update the crc32 value",
-    returns = "()",
-    type = "function"
-   },
-   decompress = {
-    args = "(buffer [, windowBits])",
-    description = "Return the decompressed stream",
-    returns = "()",
-    type = "function"
-   },
-   deflate = {
-    args = "(sink [, level, method, windowBits, memLevel, strategy, dictionary])",
-    description = "Return a deflate stream.",
-    returns = "()",
-    type = "function"
-   },
-   inflate = {
-    args = "(source [, windowBits, dictionary])",
-    description = "Return an inflate stream.",
-    returns = "()",
-    type = "function"
-   }
-  },
   type = "class"
  }
 }
 
--- when loaded as a package, return the package; otherwise continue with the script
-if pcall(debug.getlocal, 4, 1) then return api end
-
 --[[
   Conversion script for Gideros API (http://docs.giderosmobile.com/reference/autocomplete.php)
-  Run as "../../bin/lua gideros.lua <gideros_annot.api >newapi" from ZBS/api/lua folder
+  Run the script as: lua gideros-conv.lua <gideros_annot.api >gideros.lua
 
   Event
   Event.new(type) creates a new Event object
@@ -5807,7 +3505,8 @@ if pcall(debug.getlocal, 4, 1) then return api end
   + create different methods for Application and application
   + missing new() methods for some classes (+geolocation, +gyroscope, +accelerometer, +storekit)
   + application, stage, world are global variables
---]]
+
+------------------------>> cut here <<-----------------------------
 
 local class = ""
 local t = {}
@@ -5826,16 +3525,12 @@ while true do
 
   if newclass and class:lower() ~= newclass:lower() then
     class = newclass
-    if not class:match('%.') and not _G[class] then
+    if not class:match('%.') then
       t[class] = t[class] or {childs = {}, type = "class", inherits = inherits[class]} end
   end
   s = s:gsub('^'..class..'%.', ""):gsub('^'..class:lower()..'%:', "")
-  local fun, args, desc = s:match('(%w+)(%b())%s*(.*)%s*$')
   local const, value = s:match('^([A-Z_0-9]+)[ -]+(.+)$')
-  -- try one more time with lowercase/mixed constants if nothing has been found
-  if not const and not fun and s:find(" value ") then
-    const, value = s:match('^([%w_]+)[ -]+(.+)$')
-  end
+  local fun, args, desc = s:match('(%w+)(%b())%s*(.*)%s*$')
   if #class == 0 then
     -- do nothing; haven't found a single class yet; skipping Lua methods
   elseif _G[class] then
@@ -5867,7 +3562,6 @@ while true do
         args = args or "()",
         description = desc,
         returns = "()",
-        valuetype = (fun == "new" and class or nil),
       }
     elseif const then
       t[class].childs[const] = {type = "value", description = value}
@@ -5908,6 +3602,6 @@ for _, class in ipairs{'StoreKit'} do
   end
 end
 
-package.path = package.path .. ';../../lualibs/?/?.lua;../../lualibs/?.lua'
-package.cpath = package.cpath .. ';../../bin/clibs/?.dll'
-print((require 'mobdebug').line(t, {indent = ' ', comment = false}))
+print('return ' .. (require 'mobdebug').line(t, {indent = ' ', comment = false}))
+
+------------------------>> cut here <<-----------------------------]]

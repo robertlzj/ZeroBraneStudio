@@ -1,5 +1,3 @@
--- Copyright 2011-18 Paul Kulchenko, ZeroBrane LLC
-
 local ide = ide
 
 --[[
@@ -103,7 +101,6 @@ ide.config.keymap = {
   [ID.BREAKPOINTNEXT]   = "F9",
   [ID.BREAKPOINTPREV]   = "Shift-F9",
   [ID.CLEAROUTPUT]      = "",
-  [ID.CLEAROUTPUTENABLE] = "",
   [ID.INTERPRETER]      = "",
   [ID.PROJECTDIR]       = "",
 -- Help menu
@@ -113,12 +110,8 @@ ide.config.keymap = {
   [ID.EDITWATCH]        = "F2",
   [ID.DELETEWATCH]      = "Del",
 -- Editor popup menu items
-  [ID.GOTODEFINITION]   = "",
-  [ID.RENAMEALLINSTANCES] = "",
-  [ID.REPLACEALLSELECTIONS] = "",
   [ID.QUICKADDWATCH]    = "",
   [ID.QUICKEVAL]        = "",
-  [ID.ADDTOSCRATCHPAD]  = "",
 -- Filetree popup menu items
   [ID.RENAMEFILE]       = "F2",
   [ID.DELETEFILE]       = "Del",
@@ -137,15 +130,15 @@ end
 ide.config.editor.keymap = {
   -- key, modifier, command, os: http://www.scintilla.org/ScintillaDoc.html#KeyboardCommands
   -- Cmd+Left/Right moves to start/end of line
-  ["Ctrl-Left"] = {wxstc.wxSTC_KEY_LEFT, wxstc.wxSTC_SCMOD_CTRL, wxstc.wxSTC_CMD_HOME, "Macintosh"},
-  ["Ctrl-Right"] = {wxstc.wxSTC_KEY_RIGHT, wxstc.wxSTC_SCMOD_CTRL, wxstc.wxSTC_CMD_LINEEND, "Macintosh"},
+  {wxstc.wxSTC_KEY_LEFT, wxstc.wxSTC_SCMOD_CTRL, wxstc.wxSTC_CMD_HOME, "Macintosh"},
+  {wxstc.wxSTC_KEY_RIGHT, wxstc.wxSTC_SCMOD_CTRL, wxstc.wxSTC_CMD_LINEEND, "Macintosh"},
   -- Cmd+Shift+Left/Right selects to the beginning/end of the line
-  ["Ctrl-Shift-Left"] = {wxstc.wxSTC_KEY_LEFT, wxstc.wxSTC_SCMOD_CTRL+wxstc.wxSTC_SCMOD_SHIFT, wxstc.wxSTC_CMD_HOMEEXTEND, "Macintosh"},
-  ["Ctrl-Shift-Right"] = {wxstc.wxSTC_KEY_RIGHT, wxstc.wxSTC_SCMOD_CTRL+wxstc.wxSTC_SCMOD_SHIFT, wxstc.wxSTC_CMD_LINEENDEXTEND, "Macintosh"},
+  {wxstc.wxSTC_KEY_LEFT, wxstc.wxSTC_SCMOD_CTRL+wxstc.wxSTC_SCMOD_SHIFT, wxstc.wxSTC_CMD_HOMEEXTEND, "Macintosh"},
+  {wxstc.wxSTC_KEY_RIGHT, wxstc.wxSTC_SCMOD_CTRL+wxstc.wxSTC_SCMOD_SHIFT, wxstc.wxSTC_CMD_LINEENDEXTEND, "Macintosh"},
   -- Cmd+Shift+Up/Down selects to the beginning/end of the text
-  ["Ctrl-Shift-Up"] = {wxstc.wxSTC_KEY_UP, wxstc.wxSTC_SCMOD_CTRL+wxstc.wxSTC_SCMOD_SHIFT, wxstc.wxSTC_CMD_LINEUPEXTEND, "Macintosh"},
-  ["Ctrl-Shift-Down"] = {wxstc.wxSTC_KEY_DOWN, wxstc.wxSTC_SCMOD_CTRL+wxstc.wxSTC_SCMOD_SHIFT, wxstc.wxSTC_CMD_LINEDOWNEXTEND, "Macintosh"},
+  {wxstc.wxSTC_KEY_UP, wxstc.wxSTC_SCMOD_CTRL+wxstc.wxSTC_SCMOD_SHIFT, wxstc.wxSTC_CMD_LINEUPEXTEND, "Macintosh"},
+  {wxstc.wxSTC_KEY_DOWN, wxstc.wxSTC_SCMOD_CTRL+wxstc.wxSTC_SCMOD_SHIFT, wxstc.wxSTC_CMD_LINEDOWNEXTEND, "Macintosh"},
   -- Opt+Left/Right moves one word left (to the beginning)/right (to the end)
-  ["Alt-Left"] = {wxstc.wxSTC_KEY_LEFT, wxstc.wxSTC_SCMOD_ALT, wxstc.wxSTC_CMD_WORDLEFT, "Macintosh"},
-  ["Alt-Right"] = {wxstc.wxSTC_KEY_RIGHT, wxstc.wxSTC_SCMOD_ALT, wxstc.wxSTC_CMD_WORDRIGHTEND, "Macintosh"},
+  {wxstc.wxSTC_KEY_LEFT, wxstc.wxSTC_SCMOD_ALT, wxstc.wxSTC_CMD_WORDLEFT, "Macintosh"},
+  {wxstc.wxSTC_KEY_RIGHT, wxstc.wxSTC_SCMOD_ALT, wxstc.wxSTC_CMD_WORDRIGHTEND, "Macintosh"},
 }

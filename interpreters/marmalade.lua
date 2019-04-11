@@ -67,27 +67,27 @@ function LauncherFromHubProject(projdir, project_name)
     local mkb_quick = projdir..sep.."project_"..project_name..sep.."mkb-quick.txt"
 
     if not mkb_quick or not wx.wxFileExists(mkb_quick) then
-      ide:Print(("Warning: can't find '%s' file."):format(mkb_quick))
+      DisplayOutputLn(("Warning: can't find '%s' file."):format(mkb_quick))
       return
     end
     
     local build_folder = GetQuickBuildFolder(mkb_quick)
 
     if not build_folder or not wx.wxDirExists(projdir..sep..build_folder) then
-      ide:Print(("Warning: can't find '%s' Quick build folder."):format(build_folder))
+      DisplayOutputLn(("Warning: can't find '%s' Quick build folder."):format(build_folder))
       return
     end
 
     local project_file = projdir..sep.."project_"..project_name..sep.."project.ini"
 
     if not project_file or not wx.wxFileExists(project_file) then
-      ide:Print(("Warning: can't find '%s' Hub project file."):format(project_file))
+      DisplayOutputLn(("Warning: can't find '%s' Hub project file."):format(project_file))
     else
       project_settings = ProjectSettings(project_file)
     end
     
     if next(project_settings) == nil then
-      ide:Print(("Warning: can't read settings from '%s' project file. Using defaults."):format(project_file))
+      DisplayOutputLn(("Warning: can't read settings from '%s' project file. Using defaults."):format(project_file))
       project_settings = {}
     end
 
@@ -95,12 +95,12 @@ function LauncherFromHubProject(projdir, project_name)
     local via = projdir..sep..build_folder..sep..project_name.."_"..(project_settings.isDebug and 'debug' or 'release')..".via"
 
     if not via or not wx.wxFileExists(via) then
-      ide:Print(("Warning: can't find '%s' via file."):format(via))
+      DisplayOutputLn(("Warning: can't find '%s' via file."):format(via))
       via = projdir..sep..build_folder..sep.."web_"..(project_settings.isDebug and 'debug' or 'release')..".via"
     end
 
     if not via or not wx.wxFileExists(via) then
-      ide:Print(("Warning: can't find '%s' via file."):format(via))
+      DisplayOutputLn(("Warning: can't find '%s' via file."):format(via))
       via = nil
     end
 
@@ -121,7 +121,7 @@ return {
       for _, file in ipairs(FileSysGetRecursive(mproj, false, "*.mkb")) do mfile = file end
     end
     if not mfile then
-      ide:Print(("Can't find '%s' project file."):format(mproj))
+      DisplayOutputLn(("Can't find '%s' project file."):format(mproj))
       return
     end
 
@@ -161,7 +161,7 @@ return {
         s3e = candidates[#candidates]
         quick = GetFullPathIfExists(s3e, exe) -- guaranteed to exist
       else
-        ide:Print("Can't find Marmalade installation in any of these folders (and S3E_DIR environmental variable is not set): "
+        DisplayOutputLn("Can't find Marmalade installation in any of these folders (and S3E_DIR environmental variable is not set): "
           ..table.concat(paths, ", "))
         return
       end
@@ -204,13 +204,13 @@ return {
     end
 
     if not datadir then
-      ide:Print("Failed to determine data dir")
+      DisplayOutputLn("Failed to determine data dir")
       return
     end
 
     if rundebug then
       -- start running the application right away
-      ide:GetDebugger():SetOptions({redirect = mac and "r" or "c", basedir = datadir,
+      DebuggerAttachDefault({redirect = mac and "r" or "c", basedir = datadir,
         runstart = ide.config.debugger.runonstart ~= false})
 
       -- copy mobdebug.lua to the configured datadir or project folder
@@ -223,7 +223,7 @@ return {
           and ("Copied debugger ('mobdebug.lua') to '%s'."):format(mdbc)
           or ("Failed to copy debugger ('mobdebug.lua') to '%s': %s")
             :format(mdbc, wx.wxSysErrorMsg())
-        ide:Print(message)
+        DisplayOutputLn(message)
         if not copied then return end
       end
     end
@@ -233,4 +233,5 @@ return {
     return CommandLineRun(cmd,GetPathWithSep(projdir),true,true)
   end,
   hasdebugger = true,
+  fattachdebug = function(self) DebuggerAttachDefault() end,
 }

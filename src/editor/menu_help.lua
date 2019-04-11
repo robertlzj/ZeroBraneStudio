@@ -1,4 +1,4 @@
--- Copyright 2011-17 Paul Kulchenko, ZeroBrane LLC
+-- Copyright 2011-15 Paul Kulchenko, ZeroBrane LLC
 ---------------------------------------------------------
 
 local ide = ide
@@ -9,7 +9,7 @@ local frame = ide.frame
 local menuBar = frame.menuBar
 local mobdebug = require "mobdebug"
 
-local product = ide:GetProperty("help", "zerobranestudio")
+local product = GetIDEString("help", "zerobranestudio")
 local url = "http://zerobrane.com/r/"..product.."-"
 local urls = {
   [ID_HELPPROJECT] = "main",
@@ -21,7 +21,7 @@ local urls = {
 }
 
 local helpMenu = ide:MakeMenu {
-  { ID_ABOUT, TR("&About")..KSC(ID_ABOUT), TR("About %s"):format(ide:GetProperty("editor")) },
+  { ID_ABOUT, TR("&About")..KSC(ID_ABOUT), TR("About %s"):format(GetIDEString("editor")) },
   { ID_HELPPROJECT, TR("&Project Page")..KSC(ID_HELPPROJECT) },
   { ID_HELPDOCUMENTATION, TR("&Documentation")..KSC(ID_HELPDOCUMENTATION) },
   { ID_HELPGETTINGSTARTED, TR("&Getting Started Guide")..KSC(ID_HELPGETTINGSTARTED) },
@@ -33,7 +33,7 @@ local helpMenu = ide:MakeMenu {
 menuBar:Append(helpMenu, ide.osname == 'Macintosh' and "&Help" or TR("&Help"))
 
 local function displayAbout(event)
-  local logo = ide:GetAppName().."/"..ide:GetProperty("logo")
+  local logo = ide:GetAppName().."/"..GetIDEString("logo")
   local logoimg = wx.wxFileName(logo):FileExists() and
     ([[<tr><td><img src="%s"></td></tr>]]):format(logo) or ""
   local page = ([[
@@ -46,7 +46,7 @@ local function displayAbout(event)
 	  <tr>
 		<td>
 		<b>ZeroBrane Studio (%s; MobDebug %s)</b><br>
-		<b>Copyright &copy; 2011-2017 ZeroBrane LLC</b><br>
+		<b>Copyright &copy; 2011-2016 ZeroBrane LLC</b><br>
 		Paul Kulchenko<br>
 		Licensed under the MIT License.
 		</td>
@@ -80,7 +80,7 @@ local function displayAbout(event)
   :format(logoimg, ide.VERSION, mobdebug._VERSION, ide:GetAppName(),
     wx.wxVERSION_STRING, wxlua.wxLUA_VERSION_STRING)
 
-  local dlg = wx.wxDialog(frame, wx.wxID_ANY, TR("About %s"):format(ide:GetProperty("editor")))
+  local dlg = wx.wxDialog(frame, wx.wxID_ANY, TR("About %s"):format(GetIDEString("editor")))
 
   -- this is needed because wxLuaHtmlWindow only seems to take into account
   -- the initial size, but not the one set with SetSize using

@@ -1,6 +1,6 @@
 -- Copyright 2011-13 Paul Kulchenko, ZeroBrane LLC
 
-local pathcache
+local busted
 local win = ide.osname == "Windows"
 
 return {
@@ -8,7 +8,7 @@ return {
   description = "Busted Lua testing",
   api = {"baselib"},
   frun = function(self,wfilename,rundebug)
-    local busted = ide.config.path.busted or pathcache -- check if the path is configured
+    busted = busted or ide.config.path.busted -- check if the path is configured
     if not busted then
       local sep = win and ';' or ':'
       local default =
@@ -23,24 +23,23 @@ return {
         table.insert(paths, p)
       end
       if not busted then
-        ide:Print("Can't find busted executable in any of the folders in PATH: "
+        DisplayOutputLn("Can't find busted executable in any of the folders in PATH: "
           ..table.concat(paths, ", "))
         return
       end
-      pathcache = busted
     end
 
     local file = wfilename:GetFullPath()
     local helper
     if rundebug then
       -- start running the application right away
-      ide:GetDebugger():SetOptions({runstart = ide.config.debugger.runonstart ~= false})
+      DebuggerAttachDefault({runstart = ide.config.debugger.runonstart ~= false})
       local tmpfile = wx.wxFileName()
       tmpfile:AssignTempFileName(".")
       helper = tmpfile:GetFullPath()..".lua" -- busted likes .lua files more than .tmp files
       local f = io.open(helper, "w")
       if not f then
-        ide:Print("Can't open temporary file '"..helper.."' for writing.")
+        DisplayOutputLn("Can't open temporary file '"..helper.."' for writing.")
         return 
       end
       f:write("require('mobdebug').start()")
@@ -54,4 +53,5 @@ return {
       function() if helper then wx.wxRemoveFile(helper) end end)
   end,
   hasdebugger = true,
+  fattachdebug = function(self) DebuggerAttachDefault() end,
 }
